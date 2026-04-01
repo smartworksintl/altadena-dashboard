@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Altadena 91001 Recovery Tracker — Land Values · Rebuild Costs · Permits</title>
+  <meta name="description" content="Post-Eaton Fire market intelligence for Altadena CA 91001. Land values, rebuilding costs per sq ft, permit progress, and correlation analysis." />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0A0C0A; }
+    #root { min-height: 100vh; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+
+
+// ─── Pre-loaded baseline data from latest market research ───
+const BASELINE_DATA = {
+  lastUpdated: "April 1, 2026",
+  landValues: {
+    summary: {
+      avgHomeValue: "$1,136,181",
+      yoyChange: "-8.9%",
+      medianSalePrice: "$1.3M",
+      medianPricePerSqFt: "$661",
+      activeLotListings: "62+",
+      avgPricePerAcre: "$1,119,064",
+      soldLast30Days: 24,
+      avgSoldPrice30Days: "$642,389",
+    },
+    listings: [
+      { address: "343 W Woodbury Rd", sqft: 6073, price: 435000, pricePerSqFt: 72, status: "Active", type: "Fire-cleared" },
+      { address: "128 W Mendocino St", sqft: 5330, price: 450000, pricePerSqFt: 84, status: "Active", type: "Fire-cleared" },
+      { address: "2470 Marengo Ave", sqft: 10174, price: 580000, pricePerSqFt: 57, status: "Active", type: "Fire-cleared" },
+      { address: "1233 Sagemont Pl", sqft: 12848, price: 985000, pricePerSqFt: 77, status: "Active", type: "Fire-cleared" },
+      { address: "114-116 Mountain View", sqft: 11411, price: 549000, pricePerSqFt: 48, status: "Active", type: "Duplex lot" },
+      { address: "287 E Calaveras St", sqft: 8500, price: 520000, pricePerSqFt: 61, status: "Active", type: "Corner lot" },
+      { address: "740 E Poppyfields Dr", sqft: 10454, price: 808000, pricePerSqFt: 77, status: "Active", type: "Fire-cleared" },
+      { address: "71 Laurel Dr", sqft: 10454, price: 625000, pricePerSqFt: 60, status: "Active", type: "Fire-cleared" },
+      { address: "351 W Harriet Ave", sqft: 7496, price: 519000, pricePerSqFt: 69, status: "Active", type: "Fire-cleared" },
+      { address: "3051 Santa Rosa Ave", sqft: 6500, price: 465000, pricePerSqFt: 72, status: "New", type: "Fire-cleared" },
+      { address: "2738 Marengo Ave", sqft: 9500, price: 700000, pricePerSqFt: 74, status: "New", type: "Fire-cleared" },
+    ],
+    recentSales: [
+      { address: "73 E Pine St", price: 700000, date: "Feb 4, 2026", daysOnMarket: 84, saleToList: "-3%" },
+      { address: "2847 Reposa Ln", price: 600000, date: "Jan 29, 2026", daysOnMarket: 24, saleToList: "-8%" },
+      { address: "2629 Boulder Rd", price: 735000, date: "Feb 3, 2026", daysOnMarket: 108, saleToList: "-8%" },
+      { address: "2030 Lovila Ln", price: 1100000, date: "Feb 2, 2026", daysOnMarket: null, saleToList: null },
+      { address: "3318 Bellaire Dr", price: 602777, date: "Feb 2, 2026", daysOnMarket: 141, saleToList: "-11%" },
+      { address: "3359 Glenrose Ave", price: 585000, date: "Feb 2, 2026", daysOnMarket: 320, saleToList: "-16%" },
+      { address: "2717 Maiden Ln", price: 527777, date: "Jan 30, 2026", daysOnMarket: 163, saleToList: "-11%" },
+    ],
+  },
+  rebuildCosts: {
+    tiers: [
+      { tier: "Basic", range: "$300–$450/sq ft", description: "One-story, minimal customization, standard materials", color: "#22C55E" },
+      { tier: "Mid-Range", range: "$450–$600/sq ft", description: "Open layouts, semi-custom kitchens, engineered flooring", color: "#FACC15" },
+      { tier: "Luxury / Hillside", range: "$600–$800+/sq ft", description: "Architectural complexity, premium finishes, slope work", color: "#EF4444" },
+    ],
+    costBreakdown: [
+      { category: "Architectural & Engineering Plans", range: "$15,000–$50,000", note: "Pre-approved county plans available free" },
+      { category: "Permits & Fees", range: "$20,000–$40,000+", note: "LA County fee waivers for fire victims" },
+      { category: "Site Prep & Grading", range: "$10,000–$50,000", note: "Varies by slope and soil conditions" },
+      { category: "Foundation", range: "$15,000–$40,000", note: "Geotech report may/may not be required" },
+      { category: "Framing & Structure", range: "$50,000–$120,000", note: "WUI fire-hardening adds 5-15%" },
+      { category: "HVAC, Plumbing & Electrical", range: "$25,000–$50,000", note: "Layout and sq ft dependent" },
+      { category: "Flooring", range: "$4–$15/sq ft", note: "LVP ($4) to hardwood/tile ($8-$15)" },
+      { category: "Appliances", range: "$10,000–$25,000+", note: "Standard to luxury" },
+      { category: "Landscaping & Driveway", range: "$20,000–$80,000+", note: "Often excluded from builder quotes" },
+      { category: "Contingency (10-15%)", range: "Variable", note: "Recommended by AIA Los Angeles" },
+    ],
+    fixedPriceOptions: [
+      { provider: "Genesis Builders", priceRange: "$700K–$880K", details: "24 pre-approved plans, turnkey, ~1 year", note: "Broke ground Feb 2026" },
+      { provider: "Abodu (Modular)", priceRange: "Varies", details: "HCD-approved, 10-day permits under AB 818", note: "One-day installation" },
+    ],
+    marketInsights: {
+      preFireCost: "~$400/sq ft",
+      currentAvgCost: "$450–$600/sq ft",
+      highEndQuotes: "$600–$900/sq ft",
+      avgTimeline: "18–24 months (permit to occupancy)",
+      wuiUpcharge: "5–15% for fire-resistant materials",
+    },
+  },
+  permits: {
+    totalDestroyed: 9418,
+    parcelsImpacted: 6000,
+    totalPermitsIssued: 2000,
+    plansApproved: 1744,
+    underReview: 1000,
+    homesActivelyRebuilding: 1025,
+    avgReviewDays: 118,
+    countyGoalDays: 30,
+    firstCertOfOccupancy: "December 2025",
+    source: "LA County Permitting Dashboard & CalMatters",
+    timeline: [
+      { month: "Apr 2025", permits: 4, cumulative: 4 },
+      { month: "Jun 2025", permits: 17, cumulative: 21 },
+      { month: "Aug 2025", permits: 80, cumulative: 101 },
+      { month: "Oct 2025", permits: 250, cumulative: 351 },
+      { month: "Dec 2025", permits: 450, cumulative: 801 },
+      { month: "Jan 2026", permits: 369, cumulative: 1170 },
+      { month: "Feb 2026", permits: 300, cumulative: 1470 },
+      { month: "Mar 2026", permits: 530, cumulative: 2000 },
+    ],
+  },
+  correlationData: [
+    { month: "Apr 2025", permits: 4, avgBuildCost: 380, medianLotPrice: 450, avgSalePrice: 510 },
+    { month: "Jun 2025", permits: 21, avgBuildCost: 400, medianLotPrice: 480, avgSalePrice: 554 },
+    { month: "Aug 2025", permits: 101, avgBuildCost: 420, medianLotPrice: 520, avgSalePrice: 580 },
+    { month: "Oct 2025", permits: 351, avgBuildCost: 460, medianLotPrice: 560, avgSalePrice: 603 },
+    { month: "Dec 2025", permits: 801, avgBuildCost: 490, medianLotPrice: 590, avgSalePrice: 620 },
+    { month: "Jan 2026", permits: 1170, avgBuildCost: 510, medianLotPrice: 600, avgSalePrice: 642 },
+    { month: "Feb 2026", permits: 1470, avgBuildCost: 520, medianLotPrice: 620, avgSalePrice: 650 },
+    { month: "Mar 2026", permits: 2000, avgBuildCost: 535, medianLotPrice: 650, avgSalePrice: 670 },
+  ],
+};
+
+const fmt = (n) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+
+function StatCard({ label, value, subtext, accent, large }) {
+  return (
+    <div style={{
+      background: "var(--card-bg)", borderRadius: 14,
+      padding: large ? "26px 22px" : "20px 18px",
+      border: "1px solid var(--border)", position: "relative", overflow: "hidden",
+    }}>
+      <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: accent || "var(--yellow)" }} />
+      <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: 5, fontFamily: "var(--font-mono)", fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: large ? 30 : 24, fontWeight: 700, color: "var(--text)", fontFamily: "var(--font-display)", lineHeight: 1.1 }}>{value}</div>
+      {subtext && <div style={{ fontSize: 11, color: accent || "var(--muted)", marginTop: 6, fontWeight: 600 }}>{subtext}</div>}
+    </div>
+  );
+}
+
+function DataTable({ columns, rows, compact }) {
+  return (
+    <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid var(--border)" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: compact ? 12 : 13, fontFamily: "var(--font-body)" }}>
+        <thead>
+          <tr style={{ background: "var(--table-header)" }}>
+            {columns.map((col, i) => (
+              <th key={i} style={{
+                padding: compact ? "8px 10px" : "10px 14px", textAlign: col.align || "left",
+                fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em",
+                color: "var(--yellow)", borderBottom: "2px solid var(--border)", whiteSpace: "nowrap",
+              }}>{col.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr key={ri} style={{ background: ri % 2 === 0 ? "transparent" : "var(--table-stripe)" }}>
+              {columns.map((col, ci) => (
+                <td key={ci} style={{
+                  padding: compact ? "7px 10px" : "10px 14px", textAlign: col.align || "left",
+                  borderBottom: "1px solid var(--border)", color: "var(--text)",
+                  whiteSpace: col.nowrap ? "nowrap" : "normal",
+                  fontFamily: col.mono ? "var(--font-mono)" : "inherit", fontWeight: col.mono ? 600 : 400,
+                }}>{col.render ? col.render(row) : row[col.key]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function TierBar({ tier, range, description, color, maxVal = 850 }) {
+  const nums = range.match(/\d+/g);
+  const lo = parseInt(nums[0]);
+  const hi = parseInt(nums[1] || nums[0]);
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+        <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{tier}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 800, color }}>{range}</span>
+      </div>
+      <div style={{ height: 26, background: "var(--bar-track)", borderRadius: 8, position: "relative", overflow: "hidden" }}>
+        <div style={{
+          position: "absolute", left: `${(lo / maxVal) * 100}%`, width: `${((hi - lo) / maxVal) * 100}%`,
+          height: "100%", background: `linear-gradient(90deg, ${color}99, ${color})`,
+          borderRadius: 8, boxShadow: `0 0 12px ${color}44`,
+        }} />
+      </div>
+      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 5 }}>{description}</div>
+    </div>
+  );
+}
+
+function PermitTimelineChart({ data }) {
+  const w = 680, h = 280, pad = { t: 30, r: 20, b: 50, l: 60 };
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  const maxY = Math.max(...data.map(d => d.cumulative)) * 1.15;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: "auto", display: "block" }}>
+      {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+        const y = pad.t + ph - pct * ph;
+        return (<g key={i}>
+          <line x1={pad.l} y1={y} x2={w - pad.r} y2={y} stroke="#2A2D28" strokeWidth={1} />
+          <text x={pad.l - 8} y={y + 4} textAnchor="end" fill="#8A8678" fontSize={10} fontFamily="JetBrains Mono, monospace">{Math.round(pct * maxY).toLocaleString()}</text>
+        </g>);
+      })}
+      {data.map((d, i) => {
+        const barW = (pw / data.length) * 0.6;
+        const x = pad.l + (pw / data.length) * (i + 0.5) - barW / 2;
+        const barH = (d.cumulative / maxY) * ph;
+        const y = pad.t + ph - barH;
+        return (<g key={i}>
+          <rect x={x} y={y} width={barW} height={barH} rx={4} fill="url(#permitGrad)" opacity={0.9} />
+          <text x={x + barW / 2} y={y - 6} textAnchor="middle" fill="#22C55E" fontSize={11} fontWeight={700} fontFamily="JetBrains Mono, monospace">{d.cumulative.toLocaleString()}</text>
+          <text x={x + barW / 2} y={h - 10} textAnchor="middle" fill="#8A8678" fontSize={9} fontFamily="JetBrains Mono, monospace" transform={`rotate(-25, ${x + barW / 2}, ${h - 10})`}>{d.month}</text>
+        </g>);
+      })}
+      <defs><linearGradient id="permitGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#22C55E" /><stop offset="100%" stopColor="#16A34A" /></linearGradient></defs>
+    </svg>
+  );
+}
+
+function CorrelationChart({ data }) {
+  const w = 700, h = 340, pad = { t: 40, r: 50, b: 60, l: 55 };
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+  const maxPermits = Math.max(...data.map(d => d.permits)) * 1.15;
+  const maxCost = Math.max(...data.map(d => Math.max(d.avgBuildCost, d.medianLotPrice, d.avgSalePrice))) * 1.12;
+  const scalePermits = (v) => pad.t + ph - (v / maxPermits) * ph;
+  const scaleCost = (v) => pad.t + ph - (v / maxCost) * ph;
+  const xPos = (i) => pad.l + (pw / (data.length - 1)) * i;
+  const makeLine = (key, fn) => data.map((d, i) => `${i === 0 ? "M" : "L"}${xPos(i)},${fn(d[key])}`).join(" ");
+  const permitLine = makeLine("permits", scalePermits);
+  const buildLine = makeLine("avgBuildCost", scaleCost);
+  const lotLine = makeLine("medianLotPrice", scaleCost);
+  const saleLine = makeLine("avgSalePrice", scaleCost);
+  const permitArea = `${permitLine} L${xPos(data.length - 1)},${pad.t + ph} L${xPos(0)},${pad.t + ph} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: "auto", display: "block" }}>
+      {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+        const y = pad.t + ph - pct * ph;
+        return <line key={i} x1={pad.l} y1={y} x2={w - pad.r} y2={y} stroke="#2A2D28" strokeWidth={1} />;
+      })}
+      {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => (
+        <text key={`l${i}`} x={pad.l - 8} y={pad.t + ph - pct * ph + 4} textAnchor="end" fill="#FACC15" fontSize={9} fontFamily="JetBrains Mono, monospace">${Math.round(pct * maxCost)}</text>
+      ))}
+      {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => (
+        <text key={`r${i}`} x={w - pad.r + 5} y={pad.t + ph - pct * ph + 4} textAnchor="start" fill="#22C55E" fontSize={9} fontFamily="JetBrains Mono, monospace">{Math.round(pct * maxPermits)}</text>
+      ))}
+      {data.map((d, i) => (
+        <text key={i} x={xPos(i)} y={h - 12} textAnchor="middle" fill="#8A8678" fontSize={9} fontFamily="JetBrains Mono, monospace" transform={`rotate(-25, ${xPos(i)}, ${h - 12})`}>{d.month}</text>
+      ))}
+      <path d={permitArea} fill="#22C55E" opacity={0.08} />
+      <path d={permitLine} fill="none" stroke="#22C55E" strokeWidth={3} strokeLinecap="round" />
+      <path d={buildLine} fill="none" stroke="#EF4444" strokeWidth={2.5} strokeLinecap="round" strokeDasharray="6 3" />
+      <path d={saleLine} fill="none" stroke="#FACC15" strokeWidth={2.5} strokeLinecap="round" />
+      <path d={lotLine} fill="none" stroke="#3B82F6" strokeWidth={2.5} strokeLinecap="round" strokeDasharray="2 4" />
+      {data.map((d, i) => (
+        <g key={i}>
+          <circle cx={xPos(i)} cy={scalePermits(d.permits)} r={4} fill="#22C55E" />
+          <circle cx={xPos(i)} cy={scaleCost(d.avgBuildCost)} r={3.5} fill="#EF4444" />
+          <circle cx={xPos(i)} cy={scaleCost(d.avgSalePrice)} r={3.5} fill="#FACC15" />
+          <circle cx={xPos(i)} cy={scaleCost(d.medianLotPrice)} r={3.5} fill="#3B82F6" />
+        </g>
+      ))}
+      <text x={12} y={pad.t - 10} fill="#FACC15" fontSize={10} fontWeight={700} fontFamily="JetBrains Mono, monospace">$/SQ FT</text>
+      <text x={w - 12} y={pad.t - 10} textAnchor="end" fill="#22C55E" fontSize={10} fontWeight={700} fontFamily="JetBrains Mono, monospace">PERMITS</text>
+      <g transform={`translate(${pad.l + 10}, ${pad.t + 6})`}>
+        <rect x={0} y={0} width={12} height={3} rx={1.5} fill="#22C55E" />
+        <text x={16} y={4} fill="#22C55E" fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={600}>Permits (cumulative)</text>
+        <rect x={155} y={0} width={12} height={3} rx={1.5} fill="#EF4444" />
+        <text x={171} y={4} fill="#EF4444" fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={600}>Build Cost $/ft²</text>
+        <rect x={0} y={16} width={12} height={3} rx={1.5} fill="#FACC15" />
+        <text x={16} y={20} fill="#FACC15" fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={600}>Avg Sale Price (÷1000)</text>
+        <rect x={185} y={16} width={12} height={3} rx={1.5} fill="#3B82F6" />
+        <text x={201} y={20} fill="#3B82F6" fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={600}>Median Lot (÷1000)</text>
+      </g>
+    </svg>
+  );
+}
+
+function ProgressRing({ value, max, label, color, size = 110 }) {
+  const pct = Math.min(value / max, 1);
+  const r = (size - 12) / 2;
+  const circ = 2 * Math.PI * r;
+  return (
+    <div style={{ textAlign: "center" }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--bar-track)" strokeWidth={8} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={8}
+          strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)} strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ filter: `drop-shadow(0 0 6px ${color}66)` }} />
+        <text x={size / 2} y={size / 2 - 4} textAnchor="middle" fill="var(--text)" fontSize={18} fontWeight={700} fontFamily="JetBrains Mono, monospace">{Math.round(pct * 100)}%</text>
+        <text x={size / 2} y={size / 2 + 14} textAnchor="middle" fill="var(--muted)" fontSize={9} fontFamily="JetBrains Mono, monospace">{value.toLocaleString()}/{max.toLocaleString()}</text>
+      </svg>
+      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, fontWeight: 600 }}>{label}</div>
+    </div>
+  );
+}
+
+function AIRefreshPanel({ onDataRefresh }) {
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
+  async function fetchLiveData() {
+    setLoading(true); setError(""); setStatus("Searching for latest Altadena market data...");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514", max_tokens: 1000,
+          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          messages: [{ role: "user", content: `Search for the latest Altadena CA 91001 land prices, rebuilding costs per square foot, and Eaton Fire permit numbers as of March 2026. Return ONLY a JSON object with: avgBuildCost, medianLotPrice, permitsIssued, homesRebuilding, recentSales, notes` }],
+        }),
+      });
+      const data = await res.json();
+      const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("") || "";
+      setStatus("✓ Refresh complete");
+      onDataRefresh({ text, timestamp: new Date().toLocaleString() });
+    } catch (e) { setError("Could not connect. Pre-loaded data is still current (March 2026)."); setStatus(""); }
+    setLoading(false);
+  }
+  return (
+    <div style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.06) 0%, var(--card-bg) 100%)", borderRadius: 14, padding: "16px 22px", border: "1px solid rgba(34,197,94,0.2)", marginBottom: 24, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>⚡ AI-Powered Live Refresh</div>
+        <div style={{ fontSize: 11, color: "var(--muted)" }}>{status || "Web search for latest Redfin, Zillow, LA County permit data"}</div>
+        {error && <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>{error}</div>}
+      </div>
+      <button onClick={fetchLiveData} disabled={loading} style={{
+        background: loading ? "var(--muted)" : "var(--green)", color: "#0A0C0A", border: "none", borderRadius: 8,
+        padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: loading ? "wait" : "pointer", fontFamily: "var(--font-body)",
+        boxShadow: loading ? "none" : "0 0 16px rgba(34,197,94,0.3)",
+      }}>{loading ? "⏳ Searching..." : "🔄 Refresh Live Data"}</button>
+    </div>
+  );
+}
+
+function generateReport(data) {
+  const d = data;
+  const lines = [
+    "═══════════════════════════════════════════════════════════",
+    "  ALTADENA 91001 — LAND VALUE, REBUILD COST & PERMIT TRACKER",
+    "═══════════════════════════════════════════════════════════",
+    `  Generated: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`,
+    `  Data as of: ${d.lastUpdated}`, "",
+    "─── MARKET OVERVIEW ────────────────────────────────────────",
+    `  Avg Home Value (91001):     ${d.landValues.summary.avgHomeValue}`,
+    `  Year-over-Year Change:      ${d.landValues.summary.yoyChange}`,
+    `  Median Sale Price:          ${d.landValues.summary.medianSalePrice}`,
+    `  Median Price/Sq Ft:         ${d.landValues.summary.medianPricePerSqFt}`,
+    `  Active Lot Listings:        ${d.landValues.summary.activeLotListings}`,
+    `  Plots Sold (Last 30 Days):  ${d.landValues.summary.soldLast30Days}`,
+    `  Avg Sale Price (30 Days):   ${d.landValues.summary.avgSoldPrice30Days}`, "",
+    "─── ACTIVE LOT LISTINGS ───────────────────────────────────",
+    ...d.landValues.listings.map(l => `  ${l.address.padEnd(26)} ${fmt(l.price).padStart(10)}   ${l.sqft.toLocaleString().padStart(6)} sqft   $${l.pricePerSqFt}/sqft`), "",
+    "─── RECENT SALES (COMPS) ──────────────────────────────────",
+    ...d.landValues.recentSales.map(s => `  ${s.address.padEnd(22)} ${fmt(s.price).padStart(10)}   ${s.date}   ${s.saleToList || "—"}`), "",
+    "─── REBUILDING COST TIERS ─────────────────────────────────",
+    ...d.rebuildCosts.tiers.map(t => `  ${t.tier.padEnd(20)} ${t.range.padEnd(20)} ${t.description}`), "",
+    "─── PERMIT PROGRESS ───────────────────────────────────────",
+    `  Structures Destroyed:       ${d.permits.totalDestroyed.toLocaleString()}`,
+    `  Permits Issued (Total):     ${d.permits.totalPermitsIssued.toLocaleString()}`,
+    `  Plans Approved:             ${d.permits.plansApproved.toLocaleString()}`,
+    `  Under Review:               ${d.permits.underReview.toLocaleString()}`,
+    `  Homes Actively Rebuilding:  ${d.permits.homesActivelyRebuilding}`,
+    `  Avg Review Time:            ${d.permits.avgReviewDays} days (goal: ${d.permits.countyGoalDays})`, "",
+    "  Monthly Cumulative Permits:",
+    ...d.permits.timeline.map(t => `    ${t.month.padEnd(10)} +${t.permits.toString().padStart(4)} → ${t.cumulative.toLocaleString().padStart(5)} total`), "",
+    "─── FULL COST BREAKDOWN ───────────────────────────────────",
+    ...d.rebuildCosts.costBreakdown.map(c => `  ${c.category.padEnd(32)} ${c.range.padEnd(22)} ${c.note}`), "",
+    "─── SOURCES ───────────────────────────────────────────────",
+    "  Redfin, Zillow, LandSearch, LandWatch, Homes.com, ATTOM,",
+    "  GreatBuildz, Kyra Construction, GO Home Builders,",
+    "  Genesis Builders, LA County Recovery Dashboard, CalMatters,",
+    "  NBC Los Angeles, LA Public Press, Marketplace.org", "",
+    "═══════════════════════════════════════════════════════════",
+    "  NOTE: For informational purposes only. Verify all figures",
+    "  with local professionals before making financial decisions.",
+    "═══════════════════════════════════════════════════════════",
+  ];
+  return lines.join("\n");
+}
+
+function AltadenaDashboard() {
+  const [data] = useState(BASELINE_DATA);
+  const [activeTab, setActiveTab] = useState("land");
+  const [liveNotes, setLiveNotes] = useState(null);
+
+  const tabs = [
+    { id: "land", label: "Land Values", icon: "◆" },
+    { id: "rebuild", label: "Rebuild Costs", icon: "▲" },
+    { id: "permits", label: "Permits", icon: "●" },
+    { id: "correlation", label: "Correlation", icon: "◈" },
+    { id: "calc", label: "Calculator", icon: "□" },
+  ];
+
+  function downloadReport() {
+    const text = generateReport(data);
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `altadena-91001-report-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div style={{
+      "--font-display": "'Space Grotesk', 'DM Sans', sans-serif",
+      "--font-body": "'DM Sans', 'Segoe UI', sans-serif",
+      "--font-mono": "'JetBrains Mono', 'Fira Code', monospace",
+      "--bg": "#0A0C0A", "--card-bg": "#131613", "--text": "#F0EDE3", "--muted": "#8A8678",
+      "--green": "#22C55E", "--red": "#EF4444", "--yellow": "#FACC15", "--blue": "#3B82F6", "--orange": "#F97316",
+      "--border": "#232823", "--bar-track": "#1C201C", "--table-header": "#171B17", "--table-stripe": "rgba(255,255,255,0.02)",
+      background: "var(--bg)", color: "var(--text)", fontFamily: "var(--font-body)", minHeight: "100vh", padding: "0 0 60px 0",
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <div style={{ background: "linear-gradient(180deg, #111411 0%, var(--bg) 100%)", borderBottom: "1px solid var(--border)", padding: "28px 24px 18px" }}>
+        <div style={{ maxWidth: 980, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--green)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6, fontWeight: 700 }}>◈ ALTADENA 91001 RECOVERY TRACKER</div>
+              <h1 style={{ fontSize: 28, fontFamily: "var(--font-display)", fontWeight: 700, margin: 0, lineHeight: 1.15 }}>Land Values · Rebuild Costs · Permits</h1>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, fontFamily: "var(--font-mono)" }}>Post-Eaton Fire Market Intelligence · Data as of {data.lastUpdated}</div>
+            </div>
+            <button onClick={downloadReport} style={{ background: "transparent", color: "var(--yellow)", border: "1px solid rgba(250,204,21,0.3)", borderRadius: 8, padding: "9px 18px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-mono)", boxShadow: "0 0 12px rgba(250,204,21,0.08)" }}>↓ Download Report</button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 980, margin: "0 auto", padding: "20px 24px" }}>
+        <AIRefreshPanel onDataRefresh={({ text, timestamp }) => setLiveNotes({ text, timestamp })} />
+        {liveNotes && (
+          <div style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "12px 16px", marginBottom: 20, fontSize: 11 }}>
+            <strong style={{ color: "var(--green)" }}>✓ Live update at {liveNotes.timestamp}</strong>
+            <div style={{ marginTop: 6, fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", maxHeight: 120, overflow: "auto", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{liveNotes.text?.slice(0, 600)}{liveNotes.text?.length > 600 ? "…" : ""}</div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 0, borderBottom: "2px solid var(--border)", marginBottom: 24, overflowX: "auto" }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
+              padding: "10px 18px", fontSize: 12, fontWeight: activeTab === t.id ? 700 : 500,
+              color: activeTab === t.id ? "var(--yellow)" : "var(--muted)",
+              background: activeTab === t.id ? "rgba(250,204,21,0.06)" : "transparent",
+              border: "none", borderBottom: activeTab === t.id ? "2px solid var(--yellow)" : "2px solid transparent",
+              cursor: "pointer", fontFamily: "var(--font-body)", whiteSpace: "nowrap", marginBottom: -2,
+            }}><span style={{ marginRight: 6, fontSize: 8 }}>{t.icon}</span>{t.label}</button>
+          ))}
+        </div>
+
+        {activeTab === "land" && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+              <StatCard label="Avg Home Value" value={data.landValues.summary.avgHomeValue} subtext={`${data.landValues.summary.yoyChange} YoY`} accent="var(--red)" />
+              <StatCard label="Median Sale Price" value={data.landValues.summary.medianSalePrice} accent="var(--yellow)" />
+              <StatCard label="Price / Sq Ft" value="$71" subtext="Avg fire-cleared lots" accent="var(--green)" />
+              <StatCard label="Active Lots" value={data.landValues.summary.activeLotListings} subtext="Vacant land listings" accent="var(--blue)" />
+              <StatCard label="Sold Last 30 Days" value={data.landValues.summary.soldLast30Days} subtext={`Avg: ${data.landValues.summary.avgSoldPrice30Days}`} accent="var(--green)" />
+              <StatCard label="Avg Price / Acre" value="$1.12M" subtext="Based on 32 acres listed" accent="var(--yellow)" />
+              <StatCard label="Avg Rene's Rebuilding" value="0" subtext="Design Changes: 158" accent="var(--red)" />
+            </div>
+            <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginBottom: 12 }}>Active Lot Listings <span style={{ fontSize: 11, color: "var(--green)", fontFamily: "var(--font-mono)" }}>fire-cleared & vacant</span></h3>
+            <DataTable compact columns={[
+              { label: "Address", key: "address" },
+              { label: "Price", render: (r) => <span style={{ color: "#FACC15" }}>{fmt(r.price)}</span>, align: "right", mono: true },
+              { label: "Lot Sq Ft", render: (r) => r.sqft.toLocaleString(), align: "right", mono: true },
+              { label: "$/Sq Ft", render: (r) => <span style={{ color: "#22C55E" }}>${r.pricePerSqFt}</span>, align: "right", mono: true },
+              { label: "Type", key: "type" },
+            ]} rows={data.landValues.listings} />
+            <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, margin: "24px 0 12px" }}>Recent Sales <span style={{ fontSize: 11, color: "var(--yellow)", fontFamily: "var(--font-mono)" }}>comps · last 30 days</span></h3>
+            <DataTable compact columns={[
+              { label: "Address", key: "address" },
+              { label: "Sale Price", render: (r) => <span style={{ color: "#FACC15" }}>{fmt(r.price)}</span>, align: "right", mono: true },
+              { label: "Date", key: "date", nowrap: true },
+              { label: "DOM", render: (r) => r.daysOnMarket || "—", align: "right", mono: true },
+              { label: "Sale/List", render: (r) => <span style={{ color: r.saleToList?.startsWith("-") ? "#EF4444" : "#22C55E" }}>{r.saleToList || "—"}</span>, align: "right", mono: true },
+            ]} rows={data.landValues.recentSales} />
+            <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 18, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
+              <strong style={{ color: "var(--yellow)" }}>Key Observations:</strong> Post-Eaton Fire lots trade at $48–$84/sq ft for raw land. Recent comps show 3–16% below asking with 24–320 DOM. <strong style={{ color: "var(--green)" }}>24 properties sold</strong> in the last 30 days at an average of ~$642K. Home values down 8.9% YoY. New listings appearing at $465K–$700K. Buyer's market for fire-cleared parcels but confidence rising as 1,025 homes are now under construction.
+            </div>
+          </div>
+        )}
+
+        {activeTab === "rebuild" && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+              <StatCard label="Pre-Fire Cost" value="~$400/ft²" subtext="Construction baseline" accent="var(--muted)" />
+              <StatCard label="Current Average" value="$450–600/ft²" subtext="Most rebuild quotes" accent="var(--yellow)" />
+              <StatCard label="High-End Quotes" value="$650–900/ft²" subtext="Luxury / slope work" accent="var(--red)" />
+              <StatCard label="WUI Upcharge" value="+5–15%" subtext="Fire-resistant materials" accent="var(--orange)" />
+              <StatCard label="Avg Timeline" value="18–24 mo" subtext="Permit to occupancy" accent="var(--green)" />
+            </div>
+            <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginBottom: 16 }}>Cost Tiers <span style={{ fontSize: 11, color: "var(--yellow)", fontFamily: "var(--font-mono)" }}>per square foot</span></h3>
+            <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "20px 22px", border: "1px solid var(--border)", marginBottom: 24 }}>
+              {data.rebuildCosts.tiers.map((t) => <TierBar key={t.tier} {...t} />)}
+            </div>
+            <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginBottom: 12 }}>Full Cost Breakdown</h3>
+            <DataTable columns={[
+              { label: "Category", key: "category" },
+              { label: "Cost Range", key: "range", mono: true, nowrap: true },
+              { label: "Notes", key: "note" },
+            ]} rows={data.rebuildCosts.costBreakdown} />
+            <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, margin: "24px 0 12px" }}>Fixed-Price / Turnkey Options</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
+              {data.rebuildCosts.fixedPriceOptions.map((f) => (
+                <div key={f.provider} style={{ background: "var(--card-bg)", borderRadius: 12, padding: "16px 18px", border: "1px solid var(--border)" }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 4 }}>{f.provider}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 800, color: "var(--yellow)", marginBottom: 8 }}>{f.priceRange}</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>{f.details}</div>
+                  <div style={{ fontSize: 11, color: "var(--green)", marginTop: 6, fontFamily: "var(--font-mono)", fontWeight: 700 }}>✓ {f.note}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "permits" && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+              <StatCard label="Structures Destroyed" value={data.permits.totalDestroyed.toLocaleString()} accent="var(--red)" />
+              <StatCard label="Permits Issued" value={data.permits.totalPermitsIssued.toLocaleString()} subtext={`of ${data.permits.parcelsImpacted.toLocaleString()} parcels`} accent="var(--green)" />
+              <StatCard label="Plans Approved" value={data.permits.plansApproved.toLocaleString()} accent="var(--yellow)" />
+              <StatCard label="Under Review" value={data.permits.underReview.toLocaleString()} accent="var(--blue)" />
+              <StatCard label="Actively Rebuilding" value={data.permits.homesActivelyRebuilding} subtext="Homes under construction" accent="var(--green)" />
+              <StatCard label="Avg Review Time" value={`${data.permits.avgReviewDays} days`} subtext={`Goal: ${data.permits.countyGoalDays} days`} accent="var(--red)" />
+            </div>
+            <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "24px", border: "1px solid var(--border)", marginBottom: 24, display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 20 }}>
+              <ProgressRing value={data.permits.totalPermitsIssued} max={data.permits.parcelsImpacted} label="Permits / Parcels" color="var(--green)" />
+              <ProgressRing value={data.permits.plansApproved} max={data.permits.totalDestroyed} label="Plans / Destroyed" color="var(--yellow)" />
+              <ProgressRing value={data.permits.homesActivelyRebuilding} max={data.permits.totalPermitsIssued} label="Building / Permitted" color="var(--blue)" />
+              <ProgressRing value={1} max={data.permits.totalDestroyed} label="Cert. of Occupancy" color="var(--red)" />
+            </div>
+            <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginBottom: 12 }}>Cumulative Permits Over Time</h3>
+            <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "20px 16px", border: "1px solid var(--border)", marginBottom: 24 }}>
+              <PermitTimelineChart data={data.permits.timeline} />
+            </div>
+            <DataTable columns={[
+              { label: "Month", key: "month" },
+              { label: "New Permits", render: (r) => <span style={{ color: "#22C55E", fontWeight: 700 }}>+{r.permits}</span>, align: "right", mono: true },
+              { label: "Cumulative", render: (r) => <span style={{ color: "#FACC15", fontWeight: 700 }}>{r.cumulative.toLocaleString()}</span>, align: "right", mono: true },
+            ]} rows={data.permits.timeline} compact />
+            <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 18, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
+              <strong style={{ color: "var(--yellow)" }}>Source:</strong> LA County Permitting Progress Dashboard (<span style={{ color: "var(--green)" }}>recovery.lacounty.gov</span>), CalMatters, NBC Los Angeles, HeySoCal. The Eaton Fire destroyed ~9,418 structures across ~6,000 parcels. As of April 2026, <strong style={{ color: "var(--green)" }}>~2,000 permits</strong> issued with <strong style={{ color: "var(--green)" }}>1,025 homes under construction</strong>. Only ~half of impacted households have applied — signaling a critical recovery gap. 3,000+ applications received. First certificate of occupancy: December 2025.
+            </div>
+          </div>
+        )}
+
+        {activeTab === "correlation" && (
+          <div>
+            <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 14, padding: "20px 16px", marginBottom: 24 }}>
+              <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, margin: "0 0 4px 8px" }}>Permits vs. Costs vs. Sale Prices</h3>
+              <div style={{ fontSize: 11, color: "var(--muted)", margin: "0 0 14px 8px" }}>Tracking the relationship between rebuild permit velocity, construction costs, and lot/home sale prices over time</div>
+              <CorrelationChart data={data.correlationData} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14, marginBottom: 20 }}>
+              {[
+                { color: "var(--green)", title: "Permits ↑ → Costs ↑", text: "As permits accelerated (4 → 2,000), build costs rose from ~$380 to ~$535/sq ft. ULI now estimates $500–$700/ft² for many rebuilds. Higher demand for labor and materials is driving construction inflation. The Altadena Collective and Genesis Builders offer group/fixed pricing." },
+                { color: "var(--yellow)", title: "Permits ↑ → Sale Prices ↑", text: "Lot and sale prices climbed as rebuilding signals community recovery. Early fire-sale lots (~$450K) now list at $550K–$700K. With 1,025 homes under construction, buyer confidence is rising — more permits = perceived stability = higher land values." },
+                { color: "var(--red)", title: "Build Costs ↑ → Affordability ↓", text: "Pre-fire construction was ~$400/sq ft. Current quotes of $450–700+ mean a 2,000 sq ft rebuild costs $900K–$1.4M before land. Only ~half of impacted households have even applied for permits — a critical recovery gap. Fixed-price programs and prefab ($292–362/ft² base) aim to counteract this." },
+              ].map((c) => (
+                <div key={c.title} style={{ background: "var(--card-bg)", borderRadius: 12, padding: "18px 20px", border: "1px solid var(--border)", borderLeft: `4px solid ${c.color}` }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: c.color, marginBottom: 8 }}>{c.title}</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>{c.text}</div>
+                </div>
+              ))}
+            </div>
+            <DataTable columns={[
+              { label: "Month", key: "month" },
+              { label: "Permits (Cum.)", render: (r) => <span style={{ color: "#22C55E", fontWeight: 700 }}>{r.permits.toLocaleString()}</span>, align: "right", mono: true },
+              { label: "Build $/ft²", render: (r) => <span style={{ color: "#EF4444", fontWeight: 700 }}>${r.avgBuildCost}</span>, align: "right", mono: true },
+              { label: "Lot Price (÷1K)", render: (r) => <span style={{ color: "#3B82F6", fontWeight: 700 }}>${r.medianLotPrice}K</span>, align: "right", mono: true },
+              { label: "Sale $/ft²", render: (r) => <span style={{ color: "#FACC15", fontWeight: 700 }}>${r.avgSalePrice}</span>, align: "right", mono: true },
+            ]} rows={data.correlationData} compact />
+          </div>
+        )}
+
+        {activeTab === "calc" && <BuildCalculator />}
+      </div>
+    </div>
+  );
+}
+
+function BuildCalculator() {
+  const [sqft, setSqft] = useState(2000);
+  const [tier, setTier] = useState("mid");
+  const [includeAdu, setIncludeAdu] = useState(false);
+  const [lotCost, setLotCost] = useState(550000);
+  const tiers = { basic: { lo: 300, hi: 450, label: "Basic", color: "var(--green)" }, mid: { lo: 450, hi: 600, label: "Mid-Range", color: "var(--yellow)" }, luxury: { lo: 600, hi: 800, label: "Luxury", color: "var(--red)" } };
+  const t = tiers[tier];
+  const buildLo = sqft * t.lo, buildHi = sqft * t.hi;
+  const softCosts = 65000, siteCosts = 35000, landscaping = 40000;
+  const aduCost = includeAdu ? 180000 : 0;
+  const contingency = (buildLo + buildHi) / 2 * 0.12;
+  const totalLo = lotCost + buildLo + softCosts + siteCosts + landscaping + aduCost;
+  const totalHi = lotCost + buildHi + softCosts + siteCosts + landscaping + aduCost + contingency;
+
+  return (
+    <div>
+      <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "24px", border: "1px solid var(--border)", marginBottom: 20 }}>
+        <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginTop: 0, marginBottom: 18 }}>Total Project Cost Estimator</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Home Size: <span style={{ color: "var(--yellow)", fontFamily: "var(--font-mono)" }}>{sqft.toLocaleString()} sq ft</span></label>
+            <input type="range" min={800} max={5000} step={50} value={sqft} onChange={(e) => setSqft(+e.target.value)} style={{ width: "100%", height: 6, borderRadius: 3, appearance: "none", background: "var(--bar-track)", outline: "none", cursor: "pointer", marginTop: 10, accentColor: "#FACC15" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}><span>800</span><span>5,000</span></div>
+          </div>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Lot Cost: <span style={{ color: "var(--yellow)", fontFamily: "var(--font-mono)" }}>{fmt(lotCost)}</span></label>
+            <input type="range" min={300000} max={1500000} step={10000} value={lotCost} onChange={(e) => setLotCost(+e.target.value)} style={{ width: "100%", height: 6, borderRadius: 3, appearance: "none", background: "var(--bar-track)", outline: "none", cursor: "pointer", marginTop: 10, accentColor: "#FACC15" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}><span>$300K</span><span>$1.5M</span></div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10, margin: "18px 0", flexWrap: "wrap" }}>
+          {Object.entries(tiers).map(([k, v]) => (
+            <button key={k} onClick={() => setTier(k)} style={{
+              background: tier === k ? v.color : "transparent", color: tier === k ? "#0A0C0A" : "var(--muted)",
+              border: `1px solid ${tier === k ? v.color : "var(--border)"}`, borderRadius: 8, padding: "8px 16px",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)",
+              boxShadow: tier === k ? `0 0 12px ${v.color === "var(--green)" ? "rgba(34,197,94,0.3)" : v.color === "var(--yellow)" ? "rgba(250,204,21,0.3)" : "rgba(239,68,68,0.3)"}` : "none",
+            }}>{v.label} (${v.lo}–${v.hi}/ft²)</button>
+          ))}
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text)", cursor: "pointer" }}>
+          <input type="checkbox" checked={includeAdu} onChange={(e) => setIncludeAdu(e.target.checked)} style={{ width: 16, height: 16, accentColor: "#22C55E" }} />
+          Include ADU (+~$180K estimated)
+        </label>
+      </div>
+      <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "24px", border: "1px solid rgba(250,204,21,0.2)" }}>
+        <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginTop: 0, marginBottom: 16, color: "var(--yellow)" }}>Estimated Total Project Cost</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 18 }}>
+          <StatCard label="Low Estimate" value={fmt(totalLo)} accent="var(--green)" large />
+          <StatCard label="High Estimate" value={fmt(totalHi)} subtext="Includes 12% contingency" accent="var(--red)" large />
+        </div>
+        <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.9, fontFamily: "var(--font-mono)" }}>
+          {[
+            ["Lot Purchase", fmt(lotCost), "var(--blue)"],
+            [`Construction (${sqft.toLocaleString()} ft² × $${t.lo}–$${t.hi})`, `${fmt(buildLo)} – ${fmt(buildHi)}`, t.color],
+            ["Plans, Permits & Engineering", `~${fmt(softCosts)}`, "var(--muted)"],
+            ["Site Prep & Grading", `~${fmt(siteCosts)}`, "var(--muted)"],
+            ["Landscaping & Driveway", `~${fmt(landscaping)}`, "var(--muted)"],
+            ...(includeAdu ? [["ADU (Accessory Dwelling Unit)", `~${fmt(aduCost)}`, "var(--green)"]] : []),
+            ["Contingency (12%)", `~${fmt(Math.round(contingency))}`, "var(--orange)"],
+          ].map(([label, val, color], i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ color: "var(--muted)" }}>{label}</span><span style={{ color, fontWeight: 700 }}>{val}</span>
+            </div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 4px", fontWeight: 800, fontSize: 16, color: "var(--yellow)" }}>
+            <span>TOTAL RANGE</span><span>{fmt(totalLo)} – {fmt(totalHi)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<AltadenaDashboard />);
+  </script>
+</body>
+</html>
