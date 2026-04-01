@@ -325,7 +325,7 @@ function AIRefreshPanel({ onDataRefresh }) {
     setLoading(false);
   }
   return (
-    <div style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.06) 0%, var(--card-bg) 100%)", borderRadius: 14, padding: "16px 22px", border: "1px solid rgba(34,197,94,0.2)", marginBottom: 24, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+    <div className="dash-refresh" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.06) 0%, var(--card-bg) 100%)", borderRadius: 14, padding: "16px 22px", border: "1px solid rgba(34,197,94,0.2)", marginBottom: 24, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 200 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>⚡ AI-Powered Live Refresh</div>
         <div style={{ fontSize: 11, color: "var(--muted)" }}>{status || "Web search for latest Redfin, Zillow, LA County permit data"}</div>
@@ -419,20 +419,54 @@ function AltadenaDashboard() {
       background: "var(--bg)", color: "var(--text)", fontFamily: "var(--font-body)", minHeight: "100vh", padding: "0 0 60px 0",
     }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      <div style={{ background: "linear-gradient(180deg, #111411 0%, var(--bg) 100%)", borderBottom: "1px solid var(--border)", padding: "28px 24px 18px" }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 640px) {
+          .dash-header h1 { font-size: 20px !important; }
+          .dash-header .subtitle { font-size: 10px !important; }
+          .dash-header .tag { font-size: 9px !important; }
+          .dash-header { padding: 20px 14px 14px !important; }
+          .dash-content { padding: 14px 12px !important; }
+          .dash-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+          .dash-stats-3col { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+          .dash-tabs { gap: 0 !important; }
+          .dash-tabs button { padding: 8px 12px !important; font-size: 11px !important; }
+          .dash-tabs button span { display: none !important; }
+          .dash-rings { gap: 12px !important; padding: 16px 8px !important; }
+          .dash-rings svg { width: 90px !important; height: 90px !important; }
+          .dash-insight-grid { grid-template-columns: 1fr !important; }
+          .dash-calc-grid { grid-template-columns: 1fr !important; }
+          .dash-tier-btns { flex-direction: column !important; }
+          .dash-tier-btns button { width: 100% !important; }
+          .dash-fixed-grid { grid-template-columns: 1fr !important; }
+          .dash-est-grid { grid-template-columns: 1fr !important; }
+          .dash-refresh { flex-direction: column !important; align-items: stretch !important; }
+          .dash-refresh button { width: 100% !important; }
+          .dash-dl-btn { width: 100% !important; text-align: center !important; margin-top: 8px !important; }
+          .dash-chart-wrap { padding: 12px 6px !important; }
+          table { font-size: 11px !important; }
+          table th, table td { padding: 5px 6px !important; }
+        }
+        @media (max-width: 380px) {
+          .dash-stats { grid-template-columns: 1fr !important; }
+          .dash-rings { flex-direction: column !important; align-items: center !important; }
+        }
+        .dash-tabs { -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .dash-tabs::-webkit-scrollbar { display: none; }
+      `}} />
+      <div className="dash-header" style={{ background: "linear-gradient(180deg, #111411 0%, var(--bg) 100%)", borderBottom: "1px solid var(--border)", padding: "28px 24px 18px" }}>
         <div style={{ maxWidth: 980, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
             <div>
-              <div style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--green)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6, fontWeight: 700 }}>◈ ALTADENA 91001 RECOVERY TRACKER</div>
+              <div className="tag" style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--green)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 6, fontWeight: 700 }}>◈ ALTADENA 91001 RECOVERY TRACKER</div>
               <h1 style={{ fontSize: 28, fontFamily: "var(--font-display)", fontWeight: 700, margin: 0, lineHeight: 1.15 }}>Land Values · Rebuild Costs · Permits</h1>
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, fontFamily: "var(--font-mono)" }}>Post-Eaton Fire Market Intelligence · Data as of {data.lastUpdated}</div>
+              <div className="subtitle" style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, fontFamily: "var(--font-mono)" }}>Post-Eaton Fire Market Intelligence · Data as of {data.lastUpdated}</div>
             </div>
-            <button onClick={downloadReport} style={{ background: "transparent", color: "var(--yellow)", border: "1px solid rgba(250,204,21,0.3)", borderRadius: 8, padding: "9px 18px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-mono)", boxShadow: "0 0 12px rgba(250,204,21,0.08)" }}>↓ Download Report</button>
+            <button className="dash-dl-btn" onClick={downloadReport} style={{ background: "transparent", color: "var(--yellow)", border: "1px solid rgba(250,204,21,0.3)", borderRadius: 8, padding: "9px 18px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-mono)", boxShadow: "0 0 12px rgba(250,204,21,0.08)" }}>↓ Download Report</button>
           </div>
         </div>
       </div>
 
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: "20px 24px" }}>
+      <div className="dash-content" style={{ maxWidth: 980, margin: "0 auto", padding: "20px 24px" }}>
         <AIRefreshPanel onDataRefresh={({ text, timestamp }) => setLiveNotes({ text, timestamp })} />
         {liveNotes && (
           <div style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "12px 16px", marginBottom: 20, fontSize: 11 }}>
@@ -441,7 +475,7 @@ function AltadenaDashboard() {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 0, borderBottom: "2px solid var(--border)", marginBottom: 24, overflowX: "auto" }}>
+        <div className="dash-tabs" style={{ display: "flex", gap: 0, borderBottom: "2px solid var(--border)", marginBottom: 24, overflowX: "auto" }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
               padding: "10px 18px", fontSize: 12, fontWeight: activeTab === t.id ? 700 : 500,
@@ -455,7 +489,7 @@ function AltadenaDashboard() {
 
         {activeTab === "land" && (
           <div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+            <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
               <StatCard label="Avg Home Value" value="$1.13M–$1.16M" subtext="Jan–Mar 2026 range · -8.9% YoY" accent="var(--red)" />
               <StatCard label="Median Sale Price" value="$603K" subtext="Last 3 months (Jan–Mar 2026)" accent="var(--yellow)" />
               <StatCard label="Price / Sq Ft" value="$71" subtext="Avg fire-cleared lots" accent="var(--green)" />
@@ -487,7 +521,7 @@ function AltadenaDashboard() {
 
         {activeTab === "rebuild" && (
           <div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+            <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
               <StatCard label="Pre-Fire Cost" value="~$400/ft²" subtext="Construction baseline" accent="var(--muted)" />
               <StatCard label="Current Average" value="$450–600/ft²" subtext="Most rebuild quotes" accent="var(--yellow)" />
               <StatCard label="High-End Quotes" value="$650–900/ft²" subtext="Luxury / slope work" accent="var(--red)" />
@@ -505,7 +539,7 @@ function AltadenaDashboard() {
               { label: "Notes", key: "note" },
             ]} rows={data.rebuildCosts.costBreakdown} />
             <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, margin: "24px 0 12px" }}>Fixed-Price / Turnkey Options</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
+            <div className="dash-fixed-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
               {data.rebuildCosts.fixedPriceOptions.map((f) => (
                 <div key={f.provider} style={{ background: "var(--card-bg)", borderRadius: 12, padding: "16px 18px", border: "1px solid var(--border)" }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 4 }}>{f.provider}</div>
@@ -520,7 +554,7 @@ function AltadenaDashboard() {
 
         {activeTab === "permits" && (
           <div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+            <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
               <StatCard label="Structures Destroyed" value={data.permits.totalDestroyed.toLocaleString()} accent="var(--red)" />
               <StatCard label="Permits Issued" value={data.permits.totalPermitsIssued.toLocaleString()} subtext={`of ${data.permits.parcelsImpacted.toLocaleString()} parcels`} accent="var(--green)" />
               <StatCard label="Plans Approved" value={data.permits.plansApproved.toLocaleString()} accent="var(--yellow)" />
@@ -528,14 +562,14 @@ function AltadenaDashboard() {
               <StatCard label="Actively Rebuilding" value={data.permits.homesActivelyRebuilding} subtext="Homes under construction" accent="var(--green)" />
               <StatCard label="Avg Review Time" value={`${data.permits.avgReviewDays} days`} subtext={`Goal: ${data.permits.countyGoalDays} days`} accent="var(--red)" />
             </div>
-            <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "24px", border: "1px solid var(--border)", marginBottom: 24, display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 20 }}>
+            <div className="dash-rings" style={{ background: "var(--card-bg)", borderRadius: 14, padding: "24px", border: "1px solid var(--border)", marginBottom: 24, display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 20 }}>
               <ProgressRing value={data.permits.totalPermitsIssued} max={data.permits.parcelsImpacted} label="Permits / Parcels" color="var(--green)" />
               <ProgressRing value={data.permits.plansApproved} max={data.permits.totalDestroyed} label="Plans / Destroyed" color="var(--yellow)" />
               <ProgressRing value={data.permits.homesActivelyRebuilding} max={data.permits.totalPermitsIssued} label="Building / Permitted" color="var(--blue)" />
               <ProgressRing value={1} max={data.permits.totalDestroyed} label="Cert. of Occupancy" color="var(--red)" />
             </div>
             <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginBottom: 12 }}>Cumulative Permits Over Time</h3>
-            <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "20px 16px", border: "1px solid var(--border)", marginBottom: 24 }}>
+            <div className="dash-chart-wrap" style={{ background: "var(--card-bg)", borderRadius: 14, padding: "20px 16px", border: "1px solid var(--border)", marginBottom: 24 }}>
               <PermitTimelineChart data={data.permits.timeline} />
             </div>
             <DataTable columns={[
@@ -551,12 +585,12 @@ function AltadenaDashboard() {
 
         {activeTab === "correlation" && (
           <div>
-            <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 14, padding: "20px 16px", marginBottom: 24 }}>
+            <div className="dash-chart-wrap" style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 14, padding: "20px 16px", marginBottom: 24 }}>
               <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, margin: "0 0 4px 8px" }}>Permits vs. Costs vs. Sale Prices</h3>
               <div style={{ fontSize: 11, color: "var(--muted)", margin: "0 0 14px 8px" }}>Tracking the relationship between rebuild permit velocity, construction costs, and lot/home sale prices over time</div>
               <CorrelationChart data={data.correlationData} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14, marginBottom: 20 }}>
+            <div className="dash-insight-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14, marginBottom: 20 }}>
               {[
                 { color: "var(--green)", title: "Permits ↑ → Costs ↑", text: "As permits accelerated (4 → 2,000), build costs rose from ~$380 to ~$535/sq ft. ULI now estimates $500–$700/ft² for many rebuilds. Higher demand for labor and materials is driving construction inflation. The Altadena Collective and Genesis Builders offer group/fixed pricing." },
                 { color: "var(--yellow)", title: "Permits ↑ → Sale Prices ↑", text: "Lot and sale prices climbed as rebuilding signals community recovery. Early fire-sale lots (~$450K) now list at $550K–$700K. With 1,025 homes under construction, buyer confidence is rising — more permits = perceived stability = higher land values." },
@@ -602,7 +636,7 @@ function BuildCalculator() {
     <div>
       <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "24px", border: "1px solid var(--border)", marginBottom: 20 }}>
         <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginTop: 0, marginBottom: 18 }}>Total Project Cost Estimator</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+        <div className="dash-calc-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Home Size: <span style={{ color: "var(--yellow)", fontFamily: "var(--font-mono)" }}>{sqft.toLocaleString()} sq ft</span></label>
             <input type="range" min={800} max={5000} step={50} value={sqft} onChange={(e) => setSqft(+e.target.value)} style={{ width: "100%", height: 6, borderRadius: 3, appearance: "none", background: "var(--bar-track)", outline: "none", cursor: "pointer", marginTop: 10, accentColor: "#FACC15" }} />
@@ -614,7 +648,7 @@ function BuildCalculator() {
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}><span>$300K</span><span>$1.5M</span></div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10, margin: "18px 0", flexWrap: "wrap" }}>
+        <div className="dash-tier-btns" style={{ display: "flex", gap: 10, margin: "18px 0", flexWrap: "wrap" }}>
           {Object.entries(tiers).map(([k, v]) => (
             <button key={k} onClick={() => setTier(k)} style={{
               background: tier === k ? v.color : "transparent", color: tier === k ? "#0A0C0A" : "var(--muted)",
@@ -631,7 +665,7 @@ function BuildCalculator() {
       </div>
       <div style={{ background: "var(--card-bg)", borderRadius: 14, padding: "24px", border: "1px solid rgba(250,204,21,0.2)" }}>
         <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginTop: 0, marginBottom: 16, color: "var(--yellow)" }}>Estimated Total Project Cost</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 18 }}>
+        <div className="dash-est-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 18 }}>
           <StatCard label="Low Estimate" value={fmt(totalLo)} accent="var(--green)" large />
           <StatCard label="High Estimate" value={fmt(totalHi)} subtext="Includes 12% contingency" accent="var(--red)" large />
         </div>
