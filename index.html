@@ -23,17 +23,17 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // ─── Pre-loaded baseline data from latest market research ───
 const BASELINE_DATA = {
-  lastUpdated: "April 1, 2026",
+  lastUpdated: "April 5, 2026",
   landValues: {
     summary: {
       avgHomeValue: "$1,136,181",
-      yoyChange: "-8.9%",
-      medianSalePrice: "$1.3M",
-      medianPricePerSqFt: "$661",
+      yoyChange: "-15.6%",
+      medianSalePrice: "$990K",
+      medianPricePerSqFt: "$555",
       activeLotListings: "62+",
       avgPricePerAcre: "$1,119,064",
-      soldLast30Days: 24,
-      avgSoldPrice30Days: "$642,389",
+      soldLast30Days: 15,
+      avgSoldPrice30Days: "$612,500",
     },
     listings: [
       { address: "343 W Woodbury Rd", sqft: 6073, price: 435000, pricePerSqFt: 72, status: "Active", type: "Fire-cleared" },
@@ -89,36 +89,62 @@ const BASELINE_DATA = {
     },
   },
   permits: {
-    totalDestroyed: 9418,
-    parcelsImpacted: 6000,
-    totalPermitsIssued: 2000,
-    plansApproved: 1744,
-    underReview: 1000,
-    homesActivelyRebuilding: 1025,
-    avgReviewDays: 118,
+    totalDestroyed: 6746,
+    parcelsImpacted: 5936,
+    totalPermitsIssued: 2089,
+    plansApproved: 2453,
+    underReview: 1055,
+    homesActivelyRebuilding: 1088,
+    constructionCompleted: 30,
+    applicationsReceived: 3106,
+    zoningReviewsCleared: 2862,
+    plansReceived: 2398,
+    avgReviewDays: 32,
+    avgApplicantDays: 92,
+    avgTotalDays: 124,
     countyGoalDays: 30,
     firstCertOfOccupancy: "December 2025",
-    source: "LA County Permitting Dashboard & CalMatters",
+    source: "LA County Permitting Progress Dashboard (as of 4/5/2026)",
+    newResidential: {
+      sfr: { issued: 1551, construction: 990, completed: 21 },
+      mfr: { issued: 1, construction: 1, completed: 0 },
+      adu: { issued: 174, construction: 97, completed: 9 },
+    },
+    plansInReview: {
+      initialReview: 53,
+      returnedWithComments: 536,
+      recheckInProgress: 102,
+      approvedPendingClearances: 240,
+      readyToIssue: 124,
+    },
+    constructionStages: {
+      preConstruction: 133,
+      earlyInspection: 518,
+      framing: 126,
+      exteriorLath: 206,
+      finalInspection: 9,
+      permitFinaled: 28,
+    },
     timeline: [
       { month: "Apr 2025", permits: 4, cumulative: 4 },
       { month: "Jun 2025", permits: 17, cumulative: 21 },
       { month: "Aug 2025", permits: 80, cumulative: 101 },
-      { month: "Oct 2025", permits: 250, cumulative: 351 },
-      { month: "Dec 2025", permits: 450, cumulative: 801 },
-      { month: "Jan 2026", permits: 369, cumulative: 1170 },
-      { month: "Feb 2026", permits: 300, cumulative: 1470 },
-      { month: "Mar 2026", permits: 530, cumulative: 2000 },
+      { month: "Oct 2025", permits: 369, cumulative: 470 },
+      { month: "Dec 2025", permits: 630, cumulative: 1100 },
+      { month: "Jan 2026", permits: 570, cumulative: 1670 },
+      { month: "Feb 2026", permits: 230, cumulative: 1900 },
+      { month: "Apr 2026", permits: 189, cumulative: 2089 },
     ],
   },
   correlationData: [
     { month: "Apr 2025", permits: 4, avgBuildCost: 380, medianLotPrice: 450, avgSalePrice: 510 },
     { month: "Jun 2025", permits: 21, avgBuildCost: 400, medianLotPrice: 480, avgSalePrice: 554 },
     { month: "Aug 2025", permits: 101, avgBuildCost: 420, medianLotPrice: 520, avgSalePrice: 580 },
-    { month: "Oct 2025", permits: 351, avgBuildCost: 460, medianLotPrice: 560, avgSalePrice: 603 },
-    { month: "Dec 2025", permits: 801, avgBuildCost: 490, medianLotPrice: 590, avgSalePrice: 620 },
-    { month: "Jan 2026", permits: 1170, avgBuildCost: 510, medianLotPrice: 600, avgSalePrice: 642 },
-    { month: "Feb 2026", permits: 1470, avgBuildCost: 520, medianLotPrice: 620, avgSalePrice: 650 },
-    { month: "Mar 2026", permits: 2000, avgBuildCost: 535, medianLotPrice: 650, avgSalePrice: 670 },
+    { month: "Oct 2025", permits: 470, avgBuildCost: 460, medianLotPrice: 560, avgSalePrice: 603 },
+    { month: "Dec 2025", permits: 1100, avgBuildCost: 490, medianLotPrice: 590, avgSalePrice: 620 },
+    { month: "Jan 2026", permits: 1670, avgBuildCost: 510, medianLotPrice: 600, avgSalePrice: 642 },
+    { month: "Feb 2026", permits: 1900, avgBuildCost: 520, medianLotPrice: 620, avgSalePrice: 650 },
+    { month: "Apr 2026", permits: 2089, avgBuildCost: 535, medianLotPrice: 650, avgSalePrice: 555 },
   ],
 };
 
@@ -362,13 +388,21 @@ function generateReport(data) {
     ...d.landValues.recentSales.map(s => `  ${s.address.padEnd(22)} ${fmt(s.price).padStart(10)}   ${s.date}   ${s.saleToList || "—"}`), "",
     "─── REBUILDING COST TIERS ─────────────────────────────────",
     ...d.rebuildCosts.tiers.map(t => `  ${t.tier.padEnd(20)} ${t.range.padEnd(20)} ${t.description}`), "",
-    "─── PERMIT PROGRESS ───────────────────────────────────────",
-    `  Structures Destroyed:       ${d.permits.totalDestroyed.toLocaleString()}`,
-    `  Permits Issued (Total):     ${d.permits.totalPermitsIssued.toLocaleString()}`,
-    `  Plans Approved:             ${d.permits.plansApproved.toLocaleString()}`,
-    `  Under Review:               ${d.permits.underReview.toLocaleString()}`,
-    `  Homes Actively Rebuilding:  ${d.permits.homesActivelyRebuilding}`,
-    `  Avg Review Time:            ${d.permits.avgReviewDays} days (goal: ${d.permits.countyGoalDays})`, "",
+    "─── PERMIT PROGRESS (LA County Dashboard 4/5/2026) ────────",
+    `  Parcels Destroyed (Unincorp.): ${d.permits.parcelsImpacted.toLocaleString()}`,
+    `  Units Destroyed:              ${d.permits.totalDestroyed.toLocaleString()}`,
+    `  Applications Received:        ${d.permits.applicationsReceived.toLocaleString()}`,
+    `  Zoning Reviews Cleared:       ${d.permits.zoningReviewsCleared.toLocaleString()}`,
+    `  Plans Received (Parcels):     ${d.permits.plansReceived.toLocaleString()}`,
+    `  Building Plans Approved:      ${d.permits.plansApproved.toLocaleString()}`,
+    `  Building Permits Issued:      ${d.permits.totalPermitsIssued.toLocaleString()}`,
+    `  In Construction (New Res.):   ${d.permits.homesActivelyRebuilding.toLocaleString()}`,
+    `  Completed (New Res.):         ${d.permits.constructionCompleted}`,
+    `  Avg Business Days:            ${d.permits.avgTotalDays} total (${d.permits.avgReviewDays} county + ${d.permits.avgApplicantDays} applicant)`, "",
+    "  New Residential Breakdown (Issued / In Construction / Completed):",
+    `    SFR:  1,551 / 990 / 21`,
+    `    MFR:  1 / 1 / 0`,
+    `    ADU:  174 / 97 / 9`, "",
     "  Monthly Cumulative Permits:",
     ...d.permits.timeline.map(t => `    ${t.month.padEnd(10)} +${t.permits.toString().padStart(4)} → ${t.cumulative.toLocaleString().padStart(5)} total`), "",
     "─── FULL COST BREAKDOWN ───────────────────────────────────",
@@ -490,8 +524,8 @@ function AltadenaDashboard() {
         {activeTab === "land" && (
           <div>
             <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
-              <StatCard label="Avg Home Value" value="$1.13M–$1.16M" subtext="Jan–Mar 2026 range · -8.9% YoY" accent="var(--red)" />
-              <StatCard label="Median Sale Price" value="$603K" subtext="Last 3 months (Jan–Mar 2026)" accent="var(--yellow)" />
+              <StatCard label="Avg Home Value" value="$1.13M–$1.16M" subtext="Jan–Mar 2026 range · -15.6% YoY" accent="var(--red)" />
+              <StatCard label="Median Sale Price" value="$612K" subtext="Last 3 months (Jan–Mar 2026)" accent="var(--yellow)" />
               <StatCard label="Price / Sq Ft" value="$71" subtext="Avg fire-cleared lots" accent="var(--green)" />
               <StatCard label="Active Lots" value={data.landValues.summary.activeLotListings} subtext="Vacant land listings" accent="var(--blue)" />
               <StatCard label="Sold Last 30 Days" value={data.landValues.summary.soldLast30Days} subtext={`Avg: ${data.landValues.summary.avgSoldPrice30Days}`} accent="var(--green)" />
@@ -514,7 +548,7 @@ function AltadenaDashboard() {
               { label: "Sale/List", render: (r) => <span style={{ color: r.saleToList?.startsWith("-") ? "#EF4444" : "#22C55E" }}>{r.saleToList || "—"}</span>, align: "right", mono: true },
             ]} rows={data.landValues.recentSales} />
             <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 18, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
-              <strong style={{ color: "var(--yellow)" }}>Key Observations:</strong> Post-Eaton Fire lots trade at $48–$84/sq ft for raw land. Recent comps show 3–16% below asking with 24–320 DOM. <strong style={{ color: "var(--green)" }}>24 properties sold</strong> in the last 30 days at an average of ~$642K. Home values down 8.9% YoY. New listings appearing at $465K–$700K. Buyer's market for fire-cleared parcels but confidence rising as 1,025 homes are now under construction.
+              <strong style={{ color: "var(--yellow)" }}>Key Observations:</strong> Post-Eaton Fire lots trade at $48–$84/sq ft for raw land. Altadena's median sale price fell to <strong style={{ color: "var(--red)" }}>$990K in Feb 2026</strong> — down 15.6% YoY — with median price/sqft at $555 (down 14.4% YoY). Recent comps show 3–16% below asking with 24–320 DOM. <strong style={{ color: "var(--green)" }}>15 properties sold</strong> in the most recent 30-day window. Buyer's market for fire-cleared parcels, but confidence rising as 1,025+ homes are now under construction.
             </div>
           </div>
         )}
@@ -555,18 +589,18 @@ function AltadenaDashboard() {
         {activeTab === "permits" && (
           <div>
             <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
-              <StatCard label="Structures Destroyed" value={data.permits.totalDestroyed.toLocaleString()} accent="var(--red)" />
-              <StatCard label="Permits Issued" value={data.permits.totalPermitsIssued.toLocaleString()} subtext={`of ${data.permits.parcelsImpacted.toLocaleString()} parcels`} accent="var(--green)" />
-              <StatCard label="Plans Approved" value={data.permits.plansApproved.toLocaleString()} accent="var(--yellow)" />
-              <StatCard label="Under Review" value={data.permits.underReview.toLocaleString()} accent="var(--blue)" />
-              <StatCard label="Actively Rebuilding" value={data.permits.homesActivelyRebuilding} subtext="Homes under construction" accent="var(--green)" />
-              <StatCard label="Avg Review Time" value={`${data.permits.avgReviewDays} days`} subtext={`Goal: ${data.permits.countyGoalDays} days`} accent="var(--red)" />
+              <StatCard label="Parcels Destroyed" value={data.permits.parcelsImpacted.toLocaleString()} subtext={`${data.permits.totalDestroyed.toLocaleString()} units total`} accent="var(--red)" />
+              <StatCard label="Permits Issued" value={data.permits.totalPermitsIssued.toLocaleString()} subtext={`Applications: ${data.permits.applicationsReceived.toLocaleString()}`} accent="var(--green)" />
+              <StatCard label="Plans Approved" value={data.permits.plansApproved.toLocaleString()} subtext={`${data.permits.plansReceived.toLocaleString()} plans received`} accent="var(--yellow)" />
+              <StatCard label="In Construction" value={data.permits.homesActivelyRebuilding.toLocaleString()} subtext="New residential only" accent="var(--green)" />
+              <StatCard label="Completed" value={data.permits.constructionCompleted} subtext="New residential CoO issued" accent="var(--blue)" />
+              <StatCard label="Avg Total Days" value={`${data.permits.avgTotalDays}`} subtext={`${data.permits.avgReviewDays} county + ${data.permits.avgApplicantDays} applicant`} accent="var(--yellow)" />
             </div>
             <div className="dash-rings" style={{ background: "var(--card-bg)", borderRadius: 14, padding: "24px", border: "1px solid var(--border)", marginBottom: 24, display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 20 }}>
-              <ProgressRing value={data.permits.totalPermitsIssued} max={data.permits.parcelsImpacted} label="Permits / Parcels" color="var(--green)" />
-              <ProgressRing value={data.permits.plansApproved} max={data.permits.totalDestroyed} label="Plans / Destroyed" color="var(--yellow)" />
-              <ProgressRing value={data.permits.homesActivelyRebuilding} max={data.permits.totalPermitsIssued} label="Building / Permitted" color="var(--blue)" />
-              <ProgressRing value={1} max={data.permits.totalDestroyed} label="Cert. of Occupancy" color="var(--red)" />
+              <ProgressRing value={data.permits.applicationsReceived} max={data.permits.parcelsImpacted} label="Applications / Parcels" color="var(--blue)" />
+              <ProgressRing value={data.permits.totalPermitsIssued} max={data.permits.applicationsReceived} label="Permits / Applications" color="var(--green)" />
+              <ProgressRing value={data.permits.homesActivelyRebuilding} max={data.permits.totalPermitsIssued} label="Building / Permitted" color="var(--yellow)" />
+              <ProgressRing value={data.permits.constructionCompleted} max={data.permits.parcelsImpacted} label="Completed / Parcels" color="var(--red)" />
             </div>
             <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginBottom: 12 }}>Cumulative Permits Over Time</h3>
             <div className="dash-chart-wrap" style={{ background: "var(--card-bg)", borderRadius: 14, padding: "20px 16px", border: "1px solid var(--border)", marginBottom: 24 }}>
@@ -578,7 +612,7 @@ function AltadenaDashboard() {
               { label: "Cumulative", render: (r) => <span style={{ color: "#FACC15", fontWeight: 700 }}>{r.cumulative.toLocaleString()}</span>, align: "right", mono: true },
             ]} rows={data.permits.timeline} compact />
             <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 18, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
-              <strong style={{ color: "var(--yellow)" }}>Source:</strong> LA County Permitting Progress Dashboard (<span style={{ color: "var(--green)" }}>recovery.lacounty.gov</span>), CalMatters, NBC Los Angeles, HeySoCal. The Eaton Fire destroyed ~9,418 structures across ~6,000 parcels. As of April 2026, <strong style={{ color: "var(--green)" }}>~2,000 permits</strong> issued with <strong style={{ color: "var(--green)" }}>1,025 homes under construction</strong>. Only ~half of impacted households have applied — signaling a critical recovery gap. 3,000+ applications received. First certificate of occupancy: December 2025.
+              <strong style={{ color: "var(--yellow)" }}>Source:</strong> LA County Permitting Progress Dashboard (<span style={{ color: "var(--green)" }}>recovery.lacounty.gov</span>) — official data as of <strong style={{ color: "var(--text)" }}>April 5, 2026</strong>. Eaton Fire destroyed <strong style={{ color: "var(--red)" }}>5,936 parcels (6,746 units)</strong> in unincorporated areas. <strong style={{ color: "var(--green)" }}>2,089 building permits issued</strong>, <strong style={{ color: "var(--green)" }}>1,088 new residential in construction</strong>, <strong style={{ color: "var(--blue)" }}>30 completed</strong>. New residential breakdown: 1,551 SFR issued / 990 in construction / 21 completed; 174 ADUs issued / 97 in construction / 9 completed. Avg time to permit issuance: 124 business days (32 county review + 92 with applicant).
             </div>
           </div>
         )}
@@ -592,9 +626,9 @@ function AltadenaDashboard() {
             </div>
             <div className="dash-insight-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14, marginBottom: 20 }}>
               {[
-                { color: "var(--green)", title: "Permits ↑ → Costs ↑", text: "As permits accelerated (4 → 2,000), build costs rose from ~$380 to ~$535/sq ft. ULI now estimates $500–$700/ft² for many rebuilds. Higher demand for labor and materials is driving construction inflation. The Altadena Collective and Genesis Builders offer group/fixed pricing." },
-                { color: "var(--yellow)", title: "Permits ↑ → Sale Prices ↑", text: "Lot and sale prices climbed as rebuilding signals community recovery. Early fire-sale lots (~$450K) now list at $550K–$700K. With 1,025 homes under construction, buyer confidence is rising — more permits = perceived stability = higher land values." },
-                { color: "var(--red)", title: "Build Costs ↑ → Affordability ↓", text: "Pre-fire construction was ~$400/sq ft. Current quotes of $450–700+ mean a 2,000 sq ft rebuild costs $900K–$1.4M before land. Only ~half of impacted households have even applied for permits — a critical recovery gap. Fixed-price programs and prefab ($292–362/ft² base) aim to counteract this." },
+                { color: "var(--green)", title: "Permits ↑ → Costs ↑", text: "As permits accelerated (4 → 2,089), build costs rose from ~$380 to ~$535/sq ft. ULI now estimates $500–$700/ft² for many rebuilds. Higher demand for labor and materials is driving construction inflation. The Altadena Collective and Genesis Builders offer group/fixed pricing." },
+                { color: "var(--yellow)", title: "Permits ↑ → Sale Prices ↓", text: "Counterintuitively, as rebuilding accelerated, median sale prices fell 15.6% YoY to $990K (Feb 2026). Fire-cleared lots flood the market at $465K–$700K, pulling medians down. But improved lots with completed rebuilds command premiums — a bifurcated market emerging." },
+                { color: "var(--red)", title: "Build Costs ↑ → Affordability ↓", text: "Pre-fire construction was ~$400/sq ft. Current quotes of $450–700+ mean a 2,000 sq ft rebuild costs $900K–$1.4M before land. Only ~53% of impacted households have applied — Barger attributes this to delayed insurance, not permitting. Fixed-price programs and prefab ($292–362/ft² base) aim to counteract." },
               ].map((c) => (
                 <div key={c.title} style={{ background: "var(--card-bg)", borderRadius: 12, padding: "18px 20px", border: "1px solid var(--border)", borderLeft: `4px solid ${c.color}` }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: c.color, marginBottom: 8 }}>{c.title}</div>
