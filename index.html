@@ -23,17 +23,17 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // ─── Pre-loaded baseline data from latest market research ───
 const BASELINE_DATA = {
-  lastUpdated: "April 5, 2026",
+  lastUpdated: "April 20, 2026",
   landValues: {
     summary: {
-      avgHomeValue: "$1,136,181",
-      yoyChange: "-15.6%",
-      medianSalePrice: "$990K",
-      medianPricePerSqFt: "$555",
+      avgHomeValue: "$1,165,712",
+      yoyChange: "-3.8%",
+      medianSalePrice: "$1.1M",
+      medianPricePerSqFt: "$652",
       activeLotListings: "62+",
       avgPricePerAcre: "$1,119,064",
       soldLast30Days: 15,
-      avgSoldPrice30Days: "$612,500",
+      avgSoldPrice30Days: "$598,498",
     },
     listings: [
       { address: "343 W Woodbury Rd", sqft: 6073, price: 435000, pricePerSqFt: 72, status: "Active", type: "Fire-cleared" },
@@ -49,13 +49,15 @@ const BASELINE_DATA = {
       { address: "2738 Marengo Ave", sqft: 9500, price: 700000, pricePerSqFt: 74, status: "New", type: "Fire-cleared" },
     ],
     recentSales: [
+      { address: "389 W Mendocino St", price: 575100, date: "Mar 2026", daysOnMarket: null, saleToList: null },
+      { address: "2160 Maiden Ln Lot 6", price: 730000, date: "Mar 2026", daysOnMarket: null, saleToList: null },
+      { address: "596 Wapello St", price: 630000, date: "Mar 2026", daysOnMarket: null, saleToList: null },
+      { address: "3520 Glenrose Ave Lot 4", price: 560888, date: "Mar 2026", daysOnMarket: null, saleToList: null },
+      { address: "1357 El Corto Dr", price: 615000, date: "Mar 2026", daysOnMarket: null, saleToList: null },
+      { address: "93 W Altadena Dr Lot 1", price: 480000, date: "Mar 2026", daysOnMarket: null, saleToList: null },
       { address: "73 E Pine St", price: 700000, date: "Feb 4, 2026", daysOnMarket: 84, saleToList: "-3%" },
-      { address: "2847 Reposa Ln", price: 600000, date: "Jan 29, 2026", daysOnMarket: 24, saleToList: "-8%" },
       { address: "2629 Boulder Rd", price: 735000, date: "Feb 3, 2026", daysOnMarket: 108, saleToList: "-8%" },
-      { address: "2030 Lovila Ln", price: 1100000, date: "Feb 2, 2026", daysOnMarket: null, saleToList: null },
       { address: "3318 Bellaire Dr", price: 602777, date: "Feb 2, 2026", daysOnMarket: 141, saleToList: "-11%" },
-      { address: "3359 Glenrose Ave", price: 585000, date: "Feb 2, 2026", daysOnMarket: 320, saleToList: "-16%" },
-      { address: "2717 Maiden Ln", price: 527777, date: "Jan 30, 2026", daysOnMarket: 163, saleToList: "-11%" },
     ],
   },
   rebuildCosts: {
@@ -78,11 +80,12 @@ const BASELINE_DATA = {
     ],
     fixedPriceOptions: [
       { provider: "Genesis Builders", priceRange: "$700K–$880K", details: "24 pre-approved plans, turnkey, ~1 year", note: "Broke ground Feb 2026" },
+      { provider: "Homebound", priceRange: "~$310/sq ft base", details: "Pre-approved plans, 9-month build, tech-driven", note: "30–40 day permits" },
       { provider: "Abodu (Modular)", priceRange: "Varies", details: "HCD-approved, 10-day permits under AB 818", note: "One-day installation" },
     ],
     marketInsights: {
       preFireCost: "~$400/sq ft",
-      currentAvgCost: "$450–$600/sq ft",
+      currentAvgCost: "$400–$500/sq ft",
       highEndQuotes: "$600–$900/sq ft",
       avgTimeline: "18–24 months (permit to occupancy)",
       wuiUpcharge: "5–15% for fire-resistant materials",
@@ -91,25 +94,28 @@ const BASELINE_DATA = {
   permits: {
     totalDestroyed: 6746,
     parcelsImpacted: 5936,
-    totalPermitsIssued: 2089,
-    plansApproved: 2453,
+    totalPermitsIssued: 2237,
+    plansApproved: 2588,
     underReview: 1055,
-    homesActivelyRebuilding: 1088,
-    constructionCompleted: 30,
-    applicationsReceived: 3106,
-    zoningReviewsCleared: 2862,
-    plansReceived: 2398,
+    homesActivelyRebuilding: 1202,
+    constructionCompleted: 36,
+    applicationsReceived: 3153,
+    zoningReviewsCleared: 2933,
+    plansReceived: 2492,
     avgReviewDays: 32,
-    avgApplicantDays: 92,
-    avgTotalDays: 124,
+    avgApplicantDays: 95,
+    avgTotalDays: 127,
     countyGoalDays: 30,
     firstCertOfOccupancy: "December 2025",
-    source: "LA County Permitting Progress Dashboard (as of 4/5/2026)",
+    source: "LA County Permitting Progress Dashboard (as of 4/20/2026)",
     newResidential: {
       sfr: { issued: 1551, construction: 990, completed: 21 },
       mfr: { issued: 1, construction: 1, completed: 0 },
       adu: { issued: 174, construction: 97, completed: 9 },
     },
+    preApprovedPlans: { received: 79, issued: 48 },
+    selfCertification: { received: 176, issued: 70 },
+    temporaryHousing: { received: 142, approved: 94, setUp: 13 },
     plansInReview: {
       initialReview: 53,
       returnedWithComments: 536,
@@ -133,7 +139,7 @@ const BASELINE_DATA = {
       { month: "Dec 2025", permits: 630, cumulative: 1100 },
       { month: "Jan 2026", permits: 570, cumulative: 1670 },
       { month: "Feb 2026", permits: 230, cumulative: 1900 },
-      { month: "Apr 2026", permits: 189, cumulative: 2089 },
+      { month: "Apr 2026", permits: 337, cumulative: 2237 },
     ],
   },
   correlationData: [
@@ -144,7 +150,7 @@ const BASELINE_DATA = {
     { month: "Dec 2025", permits: 1100, avgBuildCost: 490, medianLotPrice: 590, avgSalePrice: 620 },
     { month: "Jan 2026", permits: 1670, avgBuildCost: 510, medianLotPrice: 600, avgSalePrice: 642 },
     { month: "Feb 2026", permits: 1900, avgBuildCost: 520, medianLotPrice: 620, avgSalePrice: 650 },
-    { month: "Apr 2026", permits: 2089, avgBuildCost: 535, medianLotPrice: 650, avgSalePrice: 555 },
+    { month: "Apr 2026", permits: 2237, avgBuildCost: 450, medianLotPrice: 615, avgSalePrice: 652 },
   ],
 };
 
@@ -388,7 +394,7 @@ function generateReport(data) {
     ...d.landValues.recentSales.map(s => `  ${s.address.padEnd(22)} ${fmt(s.price).padStart(10)}   ${s.date}   ${s.saleToList || "—"}`), "",
     "─── REBUILDING COST TIERS ─────────────────────────────────",
     ...d.rebuildCosts.tiers.map(t => `  ${t.tier.padEnd(20)} ${t.range.padEnd(20)} ${t.description}`), "",
-    "─── PERMIT PROGRESS (LA County Dashboard 4/5/2026) ────────",
+    "─── PERMIT PROGRESS (LA County Dashboard 4/20/2026) ───────",
     `  Parcels Destroyed (Unincorp.): ${d.permits.parcelsImpacted.toLocaleString()}`,
     `  Units Destroyed:              ${d.permits.totalDestroyed.toLocaleString()}`,
     `  Applications Received:        ${d.permits.applicationsReceived.toLocaleString()}`,
@@ -524,8 +530,8 @@ function AltadenaDashboard() {
         {activeTab === "land" && (
           <div>
             <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
-              <StatCard label="Avg Home Value" value="$1.13M–$1.16M" subtext="Jan–Mar 2026 range · -15.6% YoY" accent="var(--red)" />
-              <StatCard label="Median Sale Price" value="$612K" subtext="Last 3 months (Jan–Mar 2026)" accent="var(--yellow)" />
+              <StatCard label="Avg Home Value" value="$1.13M–$1.17M" subtext="Jan–Apr 2026 range · -3.8% YoY" accent="var(--red)" />
+              <StatCard label="Median Sale Price" value="$615K" subtext="Last 3 months (Feb–Apr 2026)" accent="var(--yellow)" />
               <StatCard label="Price / Sq Ft" value="$71" subtext="Avg fire-cleared lots" accent="var(--green)" />
               <StatCard label="Active Lots" value={data.landValues.summary.activeLotListings} subtext="Vacant land listings" accent="var(--blue)" />
               <StatCard label="Sold Last 30 Days" value={data.landValues.summary.soldLast30Days} subtext={`Avg: ${data.landValues.summary.avgSoldPrice30Days}`} accent="var(--green)" />
@@ -548,7 +554,7 @@ function AltadenaDashboard() {
               { label: "Sale/List", render: (r) => <span style={{ color: r.saleToList?.startsWith("-") ? "#EF4444" : "#22C55E" }}>{r.saleToList || "—"}</span>, align: "right", mono: true },
             ]} rows={data.landValues.recentSales} />
             <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 18, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
-              <strong style={{ color: "var(--yellow)" }}>Key Observations:</strong> Post-Eaton Fire lots trade at $48–$84/sq ft for raw land. Altadena's median sale price fell to <strong style={{ color: "var(--red)" }}>$990K in Feb 2026</strong> — down 15.6% YoY — with median price/sqft at $555 (down 14.4% YoY). Recent comps show 3–16% below asking with 24–320 DOM. <strong style={{ color: "var(--green)" }}>15 properties sold</strong> in the most recent 30-day window. Buyer's market for fire-cleared parcels, but confidence rising as 1,025+ homes are now under construction.
+              <strong style={{ color: "var(--yellow)" }}>Key Observations:</strong> Zillow ZHVI for Altadena is <strong style={{ color: "var(--text)" }}>$1,165,712</strong> (down 3.8% YoY). Redfin March 2026 median sale at <strong style={{ color: "var(--green)" }}>$1.1M</strong> (+54.9% YoY — rebounding from post-fire crash). Fire-cleared lots trading at $480K–$730K. Recent lot sales average ~$599K. <strong style={{ color: "var(--green)" }}>1,088 homes now under construction</strong>, 30 completed. Median $/sqft at $652 (down 16.9% YoY).
             </div>
           </div>
         )}
@@ -557,8 +563,8 @@ function AltadenaDashboard() {
           <div>
             <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
               <StatCard label="Pre-Fire Cost" value="~$400/ft²" subtext="Construction baseline" accent="var(--muted)" />
-              <StatCard label="Current Average" value="$450–600/ft²" subtext="Most rebuild quotes" accent="var(--yellow)" />
-              <StatCard label="High-End Quotes" value="$650–900/ft²" subtext="Luxury / slope work" accent="var(--red)" />
+              <StatCard label="Current Average" value="$400–500/ft²" subtext="Standard finishes (B+W Apr 2026)" accent="var(--yellow)" />
+              <StatCard label="High-End Quotes" value="$600–900/ft²" subtext="Luxury / slope work" accent="var(--red)" />
               <StatCard label="WUI Upcharge" value="+5–15%" subtext="Fire-resistant materials" accent="var(--orange)" />
               <StatCard label="Avg Timeline" value="18–24 mo" subtext="Permit to occupancy" accent="var(--green)" />
             </div>
@@ -612,7 +618,7 @@ function AltadenaDashboard() {
               { label: "Cumulative", render: (r) => <span style={{ color: "#FACC15", fontWeight: 700 }}>{r.cumulative.toLocaleString()}</span>, align: "right", mono: true },
             ]} rows={data.permits.timeline} compact />
             <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 18, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
-              <strong style={{ color: "var(--yellow)" }}>Source:</strong> LA County Permitting Progress Dashboard (<span style={{ color: "var(--green)" }}>recovery.lacounty.gov</span>) — official data as of <strong style={{ color: "var(--text)" }}>April 5, 2026</strong>. Eaton Fire destroyed <strong style={{ color: "var(--red)" }}>5,936 parcels (6,746 units)</strong> in unincorporated areas. <strong style={{ color: "var(--green)" }}>2,089 building permits issued</strong>, <strong style={{ color: "var(--green)" }}>1,088 new residential in construction</strong>, <strong style={{ color: "var(--blue)" }}>30 completed</strong>. New residential breakdown: 1,551 SFR issued / 990 in construction / 21 completed; 174 ADUs issued / 97 in construction / 9 completed. Avg time to permit issuance: 124 business days (32 county review + 92 with applicant).
+              <strong style={{ color: "var(--yellow)" }}>Source:</strong> LA County Permitting Progress Dashboard (<span style={{ color: "var(--green)" }}>recovery.lacounty.gov</span>) — official data as of <strong style={{ color: "var(--text)" }}>April 20, 2026</strong>. Eaton Fire destroyed <strong style={{ color: "var(--red)" }}>5,936 parcels (6,746 units)</strong> in unincorporated areas. <strong style={{ color: "var(--green)" }}>2,237 building permits issued</strong>, <strong style={{ color: "var(--green)" }}>1,202 new residential in construction</strong>, <strong style={{ color: "var(--blue)" }}>36 completed</strong>. Pre-approved plans: 79 received / 48 issued. Self-certification: 176 received / 70 issued. Temp housing: 142 received / 94 approved / 13 set up. Avg time to permit: 127 business days (32 county + 95 applicant).
             </div>
           </div>
         )}
@@ -626,7 +632,7 @@ function AltadenaDashboard() {
             </div>
             <div className="dash-insight-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14, marginBottom: 20 }}>
               {[
-                { color: "var(--green)", title: "Permits ↑ → Costs ↑", text: "As permits accelerated (4 → 2,089), build costs rose from ~$380 to ~$535/sq ft. ULI now estimates $500–$700/ft² for many rebuilds. Higher demand for labor and materials is driving construction inflation. The Altadena Collective and Genesis Builders offer group/fixed pricing." },
+                { color: "var(--green)", title: "Permits ↑ → Costs ↑", text: "As permits accelerated (4 → 2,237), build costs rose from ~$380 to ~$450/sq ft. Individual quotes run $650–$850/ft² while Altadena Collective group builds achieve $350–$400/ft². Higher demand for labor and materials is driving construction inflation." },
                 { color: "var(--yellow)", title: "Permits ↑ → Sale Prices ↓", text: "Counterintuitively, as rebuilding accelerated, median sale prices fell 15.6% YoY to $990K (Feb 2026). Fire-cleared lots flood the market at $465K–$700K, pulling medians down. But improved lots with completed rebuilds command premiums — a bifurcated market emerging." },
                 { color: "var(--red)", title: "Build Costs ↑ → Affordability ↓", text: "Pre-fire construction was ~$400/sq ft. Current quotes of $450–700+ mean a 2,000 sq ft rebuild costs $900K–$1.4M before land. Only ~53% of impacted households have applied — Barger attributes this to delayed insurance, not permitting. Fixed-price programs and prefab ($292–362/ft² base) aim to counteract." },
               ].map((c) => (
