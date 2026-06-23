@@ -23,17 +23,17 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // ─── Pre-loaded baseline data from latest market research ───
 const BASELINE_DATA = {
-  lastUpdated: "May 1, 2026",
+  lastUpdated: "June 23, 2026",
   landValues: {
     summary: {
-      avgHomeValue: "$1,165,712",
-      yoyChange: "-3.8%",
-      medianSalePrice: "$1.1M",
-      medianPricePerSqFt: "$652",
+      avgHomeValue: "$1,113,772",
+      yoyChange: "-13.9%",
+      medianSalePrice: "$1.3M",
+      medianPricePerSqFt: "$772",
       activeLotListings: "62+",
       avgPricePerAcre: "$1,119,064",
-      soldLast30Days: 15,
-      avgSoldPrice30Days: "$598,498",
+      soldLast30Days: 74,
+      avgSoldPrice30Days: "$1,341,697",
     },
     listings: [
       { address: "343 W Woodbury Rd", sqft: 6073, price: 435000, pricePerSqFt: 72, status: "Active", type: "Fire-cleared" },
@@ -85,7 +85,7 @@ const BASELINE_DATA = {
     ],
     marketInsights: {
       preFireCost: "~$400/sq ft",
-      currentAvgCost: "$400–$500/sq ft",
+      currentAvgCost: "$450–$750/sq ft",
       highEndQuotes: "$600–$900/sq ft",
       avgTimeline: "18–24 months (permit to occupancy)",
       wuiUpcharge: "5–15% for fire-resistant materials",
@@ -94,43 +94,43 @@ const BASELINE_DATA = {
   permits: {
     totalDestroyed: 6746,
     parcelsImpacted: 5936,
-    totalPermitsIssued: 2355,
-    plansApproved: 2735,
-    underReview: 1014,
-    homesActivelyRebuilding: 1318,
-    constructionCompleted: 44,
-    applicationsReceived: 3241,
-    zoningReviewsCleared: 2958,
-    plansReceived: 2556,
-    avgReviewDays: 34,
-    avgApplicantDays: 84,
-    avgTotalDays: 118,
+    totalPermitsIssued: 2857,
+    plansApproved: 3211,
+    underReview: 947,
+    homesActivelyRebuilding: 1676,
+    constructionCompleted: 89,
+    applicationsReceived: 3456,
+    zoningReviewsCleared: 3179,
+    plansReceived: 2822,
+    avgReviewDays: 33,
+    avgApplicantDays: 92,
+    avgTotalDays: 125,
     countyGoalDays: 30,
     firstCertOfOccupancy: "December 2025",
-    source: "LA County Permitting Progress Dashboard (as of 5/1/2026)",
+    source: "LA County Permitting Progress Dashboard (as of 6/23/2026)",
     newResidential: {
-      sfr: { issued: 1768, construction: 1217, completed: 30 },
-      mfr: { issued: 1, construction: 1, completed: 1 },
-      adu: { issued: 195, construction: 100, completed: 13 },
+      sfr: { issued: 2180, construction: 1564, completed: 67 },
+      mfr: { issued: 2, construction: 1, completed: 0 },
+      adu: { issued: 241, construction: 111, completed: 22 },
     },
     preApprovedPlans: { received: 79, issued: 48 },
     selfCertification: { received: 176, issued: 70 },
     temporaryHousing: { received: 142, approved: 94, setUp: 13 },
     plansInReview: {
-      initialReview: 47,
-      returnedWithComments: 509,
-      recheckInProgress: 78,
-      approvedPendingClearances: 214,
-      readyToIssue: 166,
+      initialReview: 61,
+      returnedWithComments: 466,
+      recheckInProgress: 66,
+      approvedPendingClearances: 210,
+      readyToIssue: 144,
     },
     constructionStages: {
-      preConstruction: 129,
-      earlyInspection: 578,
-      framing: 162,
-      exteriorLath: 261,
-      exteriorUtilities: 19,
-      finalInspection: 12,
-      permitFinaled: 40,
+      preConstruction: 86,
+      earlyInspection: 690,
+      framing: 292,
+      exteriorLath: 209,
+      exteriorUtilities: 13,
+      finalInspection: 21,
+      permitFinaled: 85,
     },
     timeline: [
       { month: "Apr 2025", permits: 4, cumulative: 4 },
@@ -141,7 +141,8 @@ const BASELINE_DATA = {
       { month: "Jan 2026", permits: 570, cumulative: 1670 },
       { month: "Feb 2026", permits: 230, cumulative: 1900 },
       { month: "Apr 2026", permits: 337, cumulative: 2237 },
-      { month: "May 2026", permits: 118, cumulative: 2355 },
+      { month: "May 2026", permits: 291, cumulative: 2528 },
+      { month: "Jun 2026", permits: 329, cumulative: 2857 },
     ],
   },
   correlationData: [
@@ -153,7 +154,8 @@ const BASELINE_DATA = {
     { month: "Jan 2026", permits: 1670, avgBuildCost: 510, medianLotPrice: 600, avgSalePrice: 642 },
     { month: "Feb 2026", permits: 1900, avgBuildCost: 520, medianLotPrice: 620, avgSalePrice: 650 },
     { month: "Apr 2026", permits: 2237, avgBuildCost: 450, medianLotPrice: 615, avgSalePrice: 652 },
-    { month: "May 2026", permits: 2355, avgBuildCost: 450, medianLotPrice: 615, avgSalePrice: 652 },
+    { month: "May 2026", permits: 2528, avgBuildCost: 450, medianLotPrice: 615, avgSalePrice: 652 },
+    { month: "Jun 2026", permits: 2857, avgBuildCost: 570, medianLotPrice: 650, avgSalePrice: 772 },
   ],
 };
 
@@ -397,7 +399,7 @@ function generateReport(data) {
     ...d.landValues.recentSales.map(s => `  ${s.address.padEnd(22)} ${fmt(s.price).padStart(10)}   ${s.date}   ${s.saleToList || "—"}`), "",
     "─── REBUILDING COST TIERS ─────────────────────────────────",
     ...d.rebuildCosts.tiers.map(t => `  ${t.tier.padEnd(20)} ${t.range.padEnd(20)} ${t.description}`), "",
-    "─── PERMIT PROGRESS (LA County Dashboard 5/1/2026) ────────",
+    "─── PERMIT PROGRESS (LA County Dashboard 6/23/2026) ───────",
     `  Parcels Destroyed (Unincorp.): ${d.permits.parcelsImpacted.toLocaleString()}`,
     `  Units Destroyed:              ${d.permits.totalDestroyed.toLocaleString()}`,
     `  Applications Received:        ${d.permits.applicationsReceived.toLocaleString()}`,
@@ -533,11 +535,11 @@ function AltadenaDashboard() {
         {activeTab === "land" && (
           <div>
             <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
-              <StatCard label="Avg Home Value" value="$1.13M–$1.17M" subtext="Jan–Apr 2026 range · -3.8% YoY" accent="var(--red)" />
-              <StatCard label="Median Sale Price" value="$615K" subtext="Last 3 months (Feb–Apr 2026)" accent="var(--yellow)" />
+              <StatCard label="Avg Home Value" value="$1.11M–$1.17M" subtext="Apr–Jun 2026 range · -13.9% YoY (91001)" accent="var(--red)" />
+              <StatCard label="Median Sale Price" value="$1.3M" subtext="3 months ending May · +63.6% YoY" accent="var(--green)" />
               <StatCard label="Price / Sq Ft" value="$71" subtext="Avg fire-cleared lots" accent="var(--green)" />
               <StatCard label="Active Lots" value={data.landValues.summary.activeLotListings} subtext="Vacant land listings" accent="var(--blue)" />
-              <StatCard label="Sold Last 30 Days" value={data.landValues.summary.soldLast30Days} subtext={`Avg: ${data.landValues.summary.avgSoldPrice30Days}`} accent="var(--green)" />
+              <StatCard label="Sold Last Month" value={data.landValues.summary.soldLast30Days} subtext={`May 2026 · Avg ${data.landValues.summary.avgSoldPrice30Days}`} accent="var(--green)" />
               <StatCard label="Avg Price / Acre" value="$1.12M" subtext="Based on 32 acres listed" accent="var(--yellow)" />
             </div>
             <h3 style={{ fontSize: 15, fontFamily: "var(--font-display)", fontWeight: 700, marginBottom: 12 }}>Active Lot Listings <span style={{ fontSize: 11, color: "var(--green)", fontFamily: "var(--font-mono)" }}>fire-cleared & vacant</span></h3>
@@ -557,7 +559,7 @@ function AltadenaDashboard() {
               { label: "Sale/List", render: (r) => <span style={{ color: r.saleToList?.startsWith("-") ? "#EF4444" : "#22C55E" }}>{r.saleToList || "—"}</span>, align: "right", mono: true },
             ]} rows={data.landValues.recentSales} />
             <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 18, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
-              <strong style={{ color: "var(--yellow)" }}>Key Observations:</strong> Zillow ZHVI for Altadena is <strong style={{ color: "var(--text)" }}>$1,165,712</strong> (down 3.8% YoY). Redfin March 2026 median sale at <strong style={{ color: "var(--green)" }}>$1.1M</strong> (+54.9% YoY — rebounding from post-fire crash). Fire-cleared lots trading at $480K–$730K. Recent lot sales average ~$599K. <strong style={{ color: "var(--green)" }}>1,318 homes now under construction</strong>, 44 completed. Avg permit time down to 118 days. Median $/sqft at $652.
+              <strong style={{ color: "var(--yellow)" }}>Key Observations:</strong> <strong style={{ color: "var(--green)" }}>Major recovery shift</strong> — Altadena's 3-month median sale price ending May 2026 jumped to <strong style={{ color: "var(--green)" }}>$1.3M (+63.6% YoY)</strong> with $/sqft at <strong style={{ color: "var(--green)" }}>$772 (+2.6%)</strong>. Zillow ZIP 91001 still shows $1.11M (-13.9%) reflecting fire-impacted properties weighing on the index. <strong style={{ color: "var(--green)" }}>74 homes sold in May</strong>, avg 38 DOM with 6 offers each. With <strong style={{ color: "var(--green)" }}>1,676 homes under construction and 89 completed</strong>, the rebuild premium is now visible in the market. Fire-cleared lots still trade at $480K–$730K.
             </div>
           </div>
         )}
@@ -566,8 +568,8 @@ function AltadenaDashboard() {
           <div>
             <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
               <StatCard label="Pre-Fire Cost" value="~$400/ft²" subtext="Construction baseline" accent="var(--muted)" />
-              <StatCard label="Current Average" value="$400–500/ft²" subtext="Standard finishes (B+W Apr 2026)" accent="var(--yellow)" />
-              <StatCard label="High-End Quotes" value="$600–900/ft²" subtext="Luxury / slope work" accent="var(--red)" />
+              <StatCard label="Current Average" value="~$570/ft²" subtext="LA Times/Project Recovery survey" accent="var(--yellow)" />
+              <StatCard label="High-End Quotes" value="$700–900/ft²" subtext="Luxury / slope work" accent="var(--red)" />
               <StatCard label="WUI Upcharge" value="+5–15%" subtext="Fire-resistant materials" accent="var(--orange)" />
               <StatCard label="Avg Timeline" value="18–24 mo" subtext="Permit to occupancy" accent="var(--green)" />
             </div>
@@ -621,7 +623,7 @@ function AltadenaDashboard() {
               { label: "Cumulative", render: (r) => <span style={{ color: "#FACC15", fontWeight: 700 }}>{r.cumulative.toLocaleString()}</span>, align: "right", mono: true },
             ]} rows={data.permits.timeline} compact />
             <div style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 16, marginTop: 18, fontSize: 12, color: "var(--muted)", lineHeight: 1.7 }}>
-              <strong style={{ color: "var(--yellow)" }}>Source:</strong> LA County Permitting Progress Dashboard (<span style={{ color: "var(--green)" }}>recovery.lacounty.gov</span>) — official data as of <strong style={{ color: "var(--text)" }}>May 1, 2026</strong>. Eaton Fire destroyed <strong style={{ color: "var(--red)" }}>5,936 parcels (6,746 units)</strong>. <strong style={{ color: "var(--green)" }}>2,355 building permits issued</strong>, <strong style={{ color: "var(--green)" }}>1,318 new residential in construction</strong>, <strong style={{ color: "var(--blue)" }}>44 completed</strong>. SFR: 1,768 issued / 1,217 construction / 30 completed. ADU: 195 issued / 100 construction / 13 completed. 1,014 plans currently in review. Avg time to permit: <strong style={{ color: "var(--green)" }}>118 business days</strong> (34 county + 84 applicant) — down from 127 days last month.
+              <strong style={{ color: "var(--yellow)" }}>Source:</strong> LA County Permitting Progress Dashboard (<span style={{ color: "var(--green)" }}>recovery.lacounty.gov</span>) — official data as of <strong style={{ color: "var(--text)" }}>June 23, 2026</strong>. Eaton Fire destroyed <strong style={{ color: "var(--red)" }}>5,936 parcels (6,746 units)</strong>. <strong style={{ color: "var(--green)" }}>2,857 building permits issued</strong>, <strong style={{ color: "var(--green)" }}>1,676 new residential in construction</strong>, <strong style={{ color: "var(--blue)" }}>89 completed</strong> (nearly 2× last month). SFR: 2,180 issued / 1,564 construction / 67 completed. ADU: 241 issued / 111 construction / 22 completed. 947 plans currently in review. Avg time to permit: <strong style={{ color: "var(--yellow)" }}>125 business days</strong> (33 county + 92 applicant).
             </div>
           </div>
         )}
@@ -635,9 +637,9 @@ function AltadenaDashboard() {
             </div>
             <div className="dash-insight-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14, marginBottom: 20 }}>
               {[
-                { color: "var(--green)", title: "Permits ↑ → Costs ↑", text: "As permits accelerated (4 → 2,355), build costs rose from ~$380 to ~$450/sq ft. Individual quotes run $650–$850/ft² while Altadena Collective group builds achieve $350–$400/ft². Higher demand for labor and materials continues driving construction inflation." },
-                { color: "var(--yellow)", title: "Permits ↑ → Sale Prices ↓", text: "Counterintuitively, as rebuilding accelerated, median sale prices fell 15.6% YoY to $990K (Feb 2026). Fire-cleared lots flood the market at $465K–$700K, pulling medians down. But improved lots with completed rebuilds command premiums — a bifurcated market emerging." },
-                { color: "var(--red)", title: "Build Costs ↑ → Affordability ↓", text: "Pre-fire construction was ~$400/sq ft. Current quotes of $450–700+ mean a 2,000 sq ft rebuild costs $900K–$1.4M before land. Only ~53% of impacted households have applied — Barger attributes this to delayed insurance, not permitting. Fixed-price programs and prefab ($292–362/ft² base) aim to counteract." },
+                { color: "var(--green)", title: "Permits ↑ → Costs ↑", text: "As permits accelerated (4 → 2,857), build costs rose from ~$380 to ~$570/sq ft per LA Times/Project Recovery survey. Custom rebuilds now $450–$750/ft² (DWD Builders). Altadena Collective group builds still achieve $350–$400/ft². Labor and material demand drives ongoing inflation." },
+                { color: "var(--yellow)", title: "Permits ↑ → Sale Prices ↑ (Recovery)", text: "Major shift: Altadena's 3-month median sale price jumped to $1.3M (+63.6% YoY) as of May 2026, with $/sqft at $772 (+2.6%). With 1,676 homes under construction and 89 completed, the rebuild premium is reversing the post-fire price drop. Homes selling in 38 days with 6 offers avg." },
+                { color: "var(--red)", title: "Build Costs ↑ → Affordability ↓", text: "At $570/ft², a 2,000 sq ft rebuild now runs ~$1.14M before land. Custom builds $900K–$1.5M. LA Times survey: 19% of Eaton homeowners expect insurance to cover 0–50% of rebuild costs. Underinsured gap widening as both land and construction prices rise together." },
               ].map((c) => (
                 <div key={c.title} style={{ background: "var(--card-bg)", borderRadius: 12, padding: "18px 20px", border: "1px solid var(--border)", borderLeft: `4px solid ${c.color}` }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: c.color, marginBottom: 8 }}>{c.title}</div>
